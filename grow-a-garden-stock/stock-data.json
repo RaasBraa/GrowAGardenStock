@@ -1,0 +1,21 @@
+{
+  "seeds": [
+    {
+      "name": "Carrot",
+      "quantity": 10
+    },
+    {
+      "name": "Blueberry",
+      "quantity": 4
+    },
+    {
+      "name": "Tomato",
+      "quantity": 3
+    },
+    {
+      "name": "Strawberry",
+      "quantity": 3
+    }
+  ],
+  "lastUpdated": "2025-06-17T22:00:49.108Z"
+}
