@@ -5,11 +5,16 @@ export interface StockItem {
   quantity: number;
 }
 
-export function parseStockEmbed(embed: APIEmbed): StockItem[] {
+export interface WeatherInfo {
+  current: string;
+  ends: string;
+}
+
+export function parseStockEmbed(embed: APIEmbed, fieldName: string = 'Current Stock'): StockItem[] {
   // Find the field that contains the stock information
-  const stockField = embed.fields?.find(field => field.name === 'Current Stock');
+  const stockField = embed.fields?.find(field => field.name === fieldName);
   if (!stockField || !stockField.value) {
-    console.warn('Could not find a "Current Stock" field in the embed.');
+    console.warn(`Could not find a "${fieldName}" field in the embed.`);
     return [];
   }
 
@@ -29,4 +34,17 @@ export function parseStockEmbed(embed: APIEmbed): StockItem[] {
   }
 
   return stockItems;
+}
+
+export function parseWeatherEmbed(embed: APIEmbed): WeatherInfo | null {
+    const weatherField = embed.fields?.find(field => field.name === 'Current Weather');
+    if (!weatherField || !weatherField.value) {
+        return null;
+    }
+    // This is a placeholder. We will need the actual embed structure to parse this correctly.
+    // For now, let's assume the value is a simple string.
+    return {
+        current: weatherField.value,
+        ends: "Unknown"
+    };
 } 
