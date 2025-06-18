@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Events } from 'discord.js';
+import { Client, GatewayIntentBits, Events, Message } from 'discord.js';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -30,6 +30,58 @@ interface AllStockData {
   lastUpdated: string;
 }
 
+function processMessage(message: Message) {
+  const stockType = channelConfig[message.channel.id];
+
+  // Only process messages from a configured channel that are sent by a bot
+  if (stockType && message.author.bot) {
+    console.log(`Processing message in [${stockType}] channel.`);
+    
+    if (message.embeds.length > 0) {
+      const embed = message.embeds[0].toJSON();
+      let parsedData: StockItem[] | WeatherInfo | null = null;
+
+      switch (stockType) {
+        case 'Weather':
+          parsedData = parseWeatherEmbed(embed);
+          break;
+        case 'Seeds':
+        case 'Gear':
+        case 'Eggs':
+        case 'Cosmetics':
+          parsedData = parseStockEmbed(embed); // Assumes field name is "Current Stock"
+          break;
+      }
+      
+      if (parsedData) {
+          console.log(`Parsed [${stockType}] data:`, parsedData);
+
+          // Read existing data to merge, or create new object
+          let allStockData: Partial<AllStockData> = {};
+          try {
+              if (fs.existsSync(STOCK_DATA_PATH)) {
+                  allStockData = JSON.parse(fs.readFileSync(STOCK_DATA_PATH, 'utf-8'));
+              }
+          } catch (e) {
+              console.error("Error reading existing stock data file", e);
+          }
+
+          // Update the data for the specific stock type
+          allStockData[stockType.toLowerCase()] = parsedData;
+          allStockData.lastUpdated = new Date().toISOString();
+          
+          fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
+          console.log(`Successfully parsed and saved [${stockType}] data to ${STOCK_DATA_PATH}`);
+      } else {
+           console.log(`Could not parse data for [${stockType}].`);
+      }
+
+    } else {
+      console.log('Message from bot does not contain any embeds. Ignoring.');
+    }
+  }
+}
+
 function initializeDiscordListener() {
   if (!BOT_TOKEN) {
     console.error('Discord bot token not set. The listener will not start.');
@@ -55,55 +107,13 @@ function initializeDiscordListener() {
   });
 
   client.on(Events.MessageCreate, (message) => {
-    const stockType = channelConfig[message.channel.id];
+    processMessage(message);
+  });
 
-    // Only process messages from a configured channel that are sent by a bot
-    if (stockType && message.author.bot) {
-      console.log(`New message from a bot in [${stockType}] channel.`);
-      
-      if (message.embeds.length > 0) {
-        const embed = message.embeds[0].toJSON();
-        let parsedData: StockItem[] | WeatherInfo | null = null;
-
-        switch (stockType) {
-          case 'Weather':
-            parsedData = parseWeatherEmbed(embed);
-            break;
-          case 'Seeds':
-          case 'Gear':
-          case 'Eggs':
-          case 'Cosmetics':
-            parsedData = parseStockEmbed(embed); // Assumes field name is "Current Stock"
-            break;
-        }
-        
-        if (parsedData) {
-            console.log(`Parsed [${stockType}] data:`, parsedData);
-
-            // Read existing data to merge, or create new object
-            let allStockData: Partial<AllStockData> = {};
-            try {
-                if (fs.existsSync(STOCK_DATA_PATH)) {
-                    allStockData = JSON.parse(fs.readFileSync(STOCK_DATA_PATH, 'utf-8'));
-                }
-            } catch (e) {
-                console.error("Error reading existing stock data file", e);
-            }
-
-            // Update the data for the specific stock type
-            allStockData[stockType.toLowerCase()] = parsedData;
-            allStockData.lastUpdated = new Date().toISOString();
-            
-            fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
-            console.log(`Successfully parsed and saved [${stockType}] data to ${STOCK_DATA_PATH}`);
-        } else {
-             console.log(`Could not parse data for [${stockType}].`);
-        }
-
-      } else {
-        console.log('Message from bot does not contain any embeds. Ignoring.');
-      }
-    }
+  client.on(Events.MessageUpdate, (oldMessage, newMessage) => {
+    // The newMessage object may be partial, so we pass it to our handler
+    // which is robust enough to handle it.
+    processMessage(newMessage as Message);
   });
 
   client.login(BOT_TOKEN).catch(console.error);
