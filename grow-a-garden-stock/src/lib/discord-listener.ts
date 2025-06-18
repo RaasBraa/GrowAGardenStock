@@ -8,7 +8,6 @@ import { parseStockEmbed, StockItem, parseWeatherEmbed, WeatherInfo } from './st
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const TARGET_BOT_ID = process.env.TARGET_BOT_ID; // The user ID of the automated stock bot
 
 // Channel IDs from environment variables
 const SEED_CHANNEL_ID = process.env.DISCORD_SEED_CHANNEL_ID;
@@ -32,8 +31,8 @@ interface AllStockData {
 }
 
 function initializeDiscordListener() {
-  if (!BOT_TOKEN || !TARGET_BOT_ID) {
-    console.error('Discord bot token or target bot ID not set. The listener will not start.');
+  if (!BOT_TOKEN) {
+    console.error('Discord bot token not set. The listener will not start.');
     return;
   }
 
@@ -58,9 +57,9 @@ function initializeDiscordListener() {
   client.on(Events.MessageCreate, (message) => {
     const stockType = channelConfig[message.channel.id];
 
-    // Only process messages from a configured channel and the target bot
-    if (stockType && message.author.id === TARGET_BOT_ID) {
-      console.log(`New message received for [${stockType}] stock.`);
+    // Only process messages from a configured channel that are sent by a bot
+    if (stockType && message.author.bot) {
+      console.log(`New message from a bot in [${stockType}] channel.`);
       
       if (message.embeds.length > 0) {
         const embed = message.embeds[0].toJSON();
@@ -98,11 +97,11 @@ function initializeDiscordListener() {
             fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
             console.log(`Successfully parsed and saved [${stockType}] data to ${STOCK_DATA_PATH}`);
         } else {
-            console.log(`Could not parse data for [${stockType}].`);
+             console.log(`Could not parse data for [${stockType}].`);
         }
 
       } else {
-        console.log('Message from target bot does not contain any embeds. Ignoring.');
+        console.log('Message from bot does not contain any embeds. Ignoring.');
       }
     }
   });

@@ -10,26 +10,31 @@ export interface WeatherInfo {
   ends: string;
 }
 
-export function parseStockEmbed(embed: APIEmbed, fieldName: string = 'Current Stock'): StockItem[] {
+export function parseStockEmbed(embed: APIEmbed): StockItem[] {
   // Find the field that contains the stock information
-  const stockField = embed.fields?.find(field => field.name === fieldName);
+  // It could be named "Current Stock" or "👗 Cosmetics Stock Update" etc.
+  // The most reliable field is the one that is not "Next Update" and is not inline
+  const stockField = embed.fields?.find(field => field.name.toLowerCase().includes('stock') || (field.inline === false && field.name !== "Next Update"));
+  
   if (!stockField || !stockField.value) {
-    console.warn(`Could not find a "${fieldName}" field in the embed.`);
+    console.warn('Could not find a valid stock field in the embed.');
     return [];
   }
 
   const stockItems: StockItem[] = [];
+  // The regex needs to handle cases with and without custom emojis
   const lines = stockField.value.split('\n');
-  
-  // Regex to capture the item name (inside **) and quantity (inside (xx))
-  const regex = /\*\*(.*?)\*\*\s*\((\d+)x\)/;
 
   for (const line of lines) {
-    const match = line.match(regex);
-    if (match && match[1] && match[2]) {
-      const name = match[1].trim();
-      const quantity = parseInt(match[2], 10);
-      stockItems.push({ name, quantity });
+    // A special case for items that might not have a quantity, like the cosmetics.
+    // If no quantity is found, assume 1.
+    const quantityMatch = line.match(/\((\d+)x\)/);
+    const nameMatch = line.match(/\*\*(.*?)\*\*/);
+
+    if (nameMatch && nameMatch[1]) {
+        const name = nameMatch[1].trim();
+        const quantity = quantityMatch ? parseInt(quantityMatch[1], 10) : 1;
+        stockItems.push({ name, quantity });
     }
   }
 
@@ -38,13 +43,18 @@ export function parseStockEmbed(embed: APIEmbed, fieldName: string = 'Current St
 
 export function parseWeatherEmbed(embed: APIEmbed): WeatherInfo | null {
     const weatherField = embed.fields?.find(field => field.name === 'Current Weather');
-    if (!weatherField || !weatherField.value) {
+    const endsField = embed.fields?.find(field => field.name === 'Ends In');
+
+    if (!weatherField || !weatherField.value || !endsField || !endsField.value) {
+        console.warn('Could not find weather or end time fields in the embed.');
         return null;
     }
-    // This is a placeholder. We will need the actual embed structure to parse this correctly.
-    // For now, let's assume the value is a simple string.
+
+    // Extract the weather name, removing the asterisks
+    const weatherName = weatherField.value.replace(/\*/g, '').trim();
+
     return {
-        current: weatherField.value,
-        ends: "Unknown"
+        current: weatherName,
+        ends: endsField.value // Keep the raw timestamp string e.g. "<t:1750250434:R>"
     };
 } 
