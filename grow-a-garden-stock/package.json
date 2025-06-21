@@ -12,6 +12,7 @@
   "dependencies": {
     "discord.js": "^14.15.3",
     "dotenv": "^16.5.0",
+    "expo-server-sdk": "^3.15.0",
     "next": "15.3.3",
     "node-fetch": "^3.3.2",
     "react": "^19.0.0",

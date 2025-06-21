@@ -1,5 +1,4 @@
-// @ts-expect-error: expo-server-sdk has no types
-import { Expo } from 'expo-server-sdk';
+import { Expo, ExpoPushMessage, ExpoPushReceipt } from 'expo-server-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -27,10 +26,10 @@ function saveTokens(tokens: PushTokenEntry[]) {
 }
 
 export async function sendRareItemNotification(itemName: string, rarity: string, quantity: number) {
-  let tokens = loadTokens().filter(t => t.is_active);
+  const tokens = loadTokens().filter(t => t.is_active);
   if (tokens.length === 0) return;
 
-  const messages = tokens.map(t => ({
+  const messages: ExpoPushMessage[] = tokens.map(t => ({
     to: t.token,
     sound: 'default',
     title: 'Rare Item Alert!',
@@ -42,16 +41,17 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
   const chunks = expo.chunkPushNotifications(messages);
   const failedTokens: string[] = [];
 
-  type ExpoPushReceipt = { status: string; details?: any; message?: string };
-
   for (const chunk of chunks) {
     try {
       const receipts = await expo.sendPushNotificationsAsync(chunk);
       receipts.forEach((receipt: ExpoPushReceipt, idx: number) => {
         if (receipt.status === 'error') {
-          const token = chunk[idx]?.to;
-          if (token) failedTokens.push(token);
-          console.error('Push notification error:', receipt.details || receipt.message);
+          // The 'to' property is not on the receipt, so we get it from the original chunk
+          const token = (chunk as ExpoPushMessage[])[idx]?.to;
+          if (token) {
+            failedTokens.push(token as string);
+            console.error(`Push notification error for token ${token}:`, receipt.details || receipt.message);
+          }
         }
       });
     } catch (error) {
@@ -61,7 +61,8 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
 
   // Remove failed tokens
   if (failedTokens.length > 0) {
-    tokens = tokens.filter(t => !failedTokens.includes(t.token));
-    saveTokens(tokens);
+    const allTokens = loadTokens();
+    const activeTokens = allTokens.filter(t => !failedTokens.includes(t.token));
+    saveTokens(activeTokens);
   }
 } 

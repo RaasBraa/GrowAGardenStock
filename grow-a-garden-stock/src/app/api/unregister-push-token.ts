@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-// @ts-expect-error: expo-server-sdk has no types
 import { Expo } from 'expo-server-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
