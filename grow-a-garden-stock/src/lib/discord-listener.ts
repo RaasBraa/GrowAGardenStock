@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 import { parseStockEmbed, StockItem, parseWeatherEmbed, WeatherInfo } from './stock-parser';
+import { sendRareItemNotification } from './pushNotifications';
 
 // Explicitly load .env.local from the project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -72,6 +73,18 @@ function processMessage(message: Message) {
           
           fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
           console.log(`Successfully parsed and saved [${stockType}] data to ${STOCK_DATA_PATH}`);
+
+          // --- Push Notification Integration ---
+          // Define rare items (for demo, hardcoded list)
+          const rareItems = ['Strawberry', 'Blueberry', 'Harvest Tool', 'Uncommon Egg', 'Legendary Seed'];
+          if (['Seeds', 'Gear', 'Eggs'].includes(stockType) && Array.isArray(parsedData)) {
+            parsedData.forEach(item => {
+              if (rareItems.includes(item.name)) {
+                sendRareItemNotification(item.name, 'Rare', item.quantity);
+              }
+            });
+          }
+          // --- End Push Notification Integration ---
       } else {
            console.log(`Could not parse data for [${stockType}].`);
       }
