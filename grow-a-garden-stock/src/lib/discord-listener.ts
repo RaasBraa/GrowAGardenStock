@@ -34,8 +34,8 @@ interface AllStockData {
 function processMessage(message: Message) {
   const stockType = channelConfig[message.channel.id];
 
-  // Only process messages from a configured channel that are sent by a bot
-  if (stockType && message.author.bot) {
+  // Process all messages from configured channels (not just bot messages)
+  if (stockType) {
     console.log(`📨 Processing message in [${stockType}] channel.`);
     
     if (message.embeds.length > 0) {
@@ -111,7 +111,7 @@ function processMessage(message: Message) {
       }
 
     } else {
-      console.log('📝 Message from bot does not contain any embeds. Ignoring.');
+      console.log('📝 Message does not contain any embeds. Ignoring.');
     }
   }
 }
