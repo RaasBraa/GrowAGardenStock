@@ -48,6 +48,14 @@ export const ALL_ITEMS = {
   ]
 };
 
+const categoryAssets = {
+  'Seeds': { emoji: '🌱', title: 'Seed Stock Update' },
+  'Gear': { emoji: '🛠️', title: 'Gear Stock Update' },
+  'Eggs': { emoji: '🥚', title: 'Egg Stock Update' },
+  'Cosmetics': { emoji: '✨', title: 'Cosmetic Stock Update' },
+  'Default': { emoji: '🛒', title: 'Item in Stock!' }
+}
+
 function loadTokens(): PushTokenEntry[] {
   if (!fs.existsSync(TOKENS_PATH)) return [];
   try {
@@ -175,10 +183,12 @@ export async function sendItemNotification(itemName: string, quantity: number, c
     channel: category.toLowerCase()
   };
 
+  const assets = categoryAssets[category as keyof typeof categoryAssets] || categoryAssets.Default;
+
   const messages: ExpoPushMessage[] = interestedTokens.map(t => ({
     to: t.token,
     sound: 'default',
-    title: `${itemName} in Stock! 🌱`,
+    title: `${assets.emoji} ${itemName} in Stock!`,
     body: `${itemName} is now available! Quantity: ${quantity}`,
     data: { ...notificationData },
     priority: 'high',
