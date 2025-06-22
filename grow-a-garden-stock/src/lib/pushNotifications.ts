@@ -44,7 +44,7 @@ export const ALL_ITEMS = {
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
-    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Summer Egg"
+    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Summer Egg", "Paradise Egg"
   ]
 };
 
