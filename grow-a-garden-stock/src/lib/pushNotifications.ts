@@ -92,17 +92,18 @@ function updateTokenLastUsed(token: string): void {
 }
 
 function handleReceiptError(receipt: ExpoPushReceipt, token: string): void {
-  const details = receipt.details as { error?: string; message?: string } | undefined;
-  if (details?.error === 'DeviceNotRegistered') {
-    console.log(`📱 Device not registered, removing token: ${token.substring(0, 20)}...`);
-  } else if (details?.error === 'MessageTooBig') {
-    console.error(`📏 Message too big for token: ${token.substring(0, 20)}...`);
-  } else if (details?.error === 'MessageRateExceeded') {
-    console.warn(`⚡ Rate limit exceeded for token: ${token.substring(0, 20)}...`);
-  } else if (details?.error === 'InvalidCredentials') {
-    console.error(`🔐 Invalid credentials for token: ${token.substring(0, 20)}...`);
-  } else {
-    console.error(`❌ Push notification error for token ${token.substring(0, 20)}...:`, details || 'Unknown error');
+  if (receipt.status === 'error') {
+    if (receipt.details?.error === 'DeviceNotRegistered') {
+      console.log(`📱 Device not registered, removing token: ${token.substring(0, 20)}...`);
+    } else if (receipt.details?.error === 'MessageTooBig') {
+      console.error(`📏 Message too big for token: ${token.substring(0, 20)}...`);
+    } else if (receipt.details?.error === 'MessageRateExceeded') {
+      console.warn(`⚡ Rate limit exceeded for token: ${token.substring(0, 20)}...`);
+    } else if (receipt.details?.error === 'InvalidCredentials') {
+      console.error(`🔐 Invalid credentials for token: ${token.substring(0, 20)}...`);
+    } else {
+      console.error(`❌ Push notification error for token ${token.substring(0, 20)}...:`, receipt.details);
+    }
   }
 }
 
@@ -118,7 +119,7 @@ async function sendChunkWithRetry(chunk: ExpoPushMessage[], retryCount = 0): Pro
       if (receipt.status === 'error') {
         handleReceiptError(receipt, token);
         failedTokens.push(token);
-      } else if (receipt.status === 'ok') {
+      } else {
         // Update last used timestamp for successful deliveries
         updateTokenLastUsed(token);
       }
@@ -179,7 +180,7 @@ export async function sendItemNotification(itemName: string, quantity: number, c
     sound: 'default',
     title: `${itemName} in Stock! 🌱`,
     body: `${itemName} is now available! Quantity: ${quantity}`,
-    data: notificationData,
+    data: { ...notificationData },
     priority: 'high',
     channelId: 'item-alerts',
     categoryId: 'item-alerts',
@@ -240,7 +241,7 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
     sound: 'default',
     title: `Rare Item Alert! 🌱`,
     body: `${itemName} (${rarity}) is in stock! Quantity: ${quantity}`,
-    data: notificationData,
+    data: { ...notificationData },
     priority: 'high',
     channelId: 'rare-items',
     categoryId: 'rare-items',
@@ -296,10 +297,10 @@ export async function sendStockUpdateNotification(updateType: 'seeds' | 'gear' |
   const messages: ExpoPushMessage[] = tokens.map(t => ({
     to: t.token,
     sound: 'default',
-    title: `Stock Update 📦`,
-    body: `${itemCount} new ${updateType} items available!`,
-    data: notificationData,
-    priority: 'default',
+    title: `New ${updateType} in Stock!`,
+    body: `The shop has been updated with ${itemCount} new ${updateType}.`,
+    data: { ...notificationData },
+    priority: 'normal',
     channelId: 'stock-updates',
     categoryId: 'stock-updates',
   }));
@@ -342,10 +343,10 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
   const messages: ExpoPushMessage[] = tokens.map(t => ({
     to: t.token,
     sound: 'default',
-    title: `Weather Alert ⛈️`,
-    body: `${weatherType}: ${description}`,
-    data: notificationData,
-    priority: 'high',
+    title: `Weather Alert: ${weatherType}`,
+    body: description,
+    data: { ...notificationData },
+    priority: 'normal',
     channelId: 'weather-alerts',
     categoryId: 'weather-alerts',
   }));
