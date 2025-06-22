@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 import { parseStockEmbed, StockItem, parseWeatherEmbed, WeatherInfo } from './stock-parser';
-import { sendRareItemNotification, sendStockUpdateNotification, sendWeatherAlertNotification } from './pushNotifications';
+import { sendItemNotification, sendStockUpdateNotification, sendWeatherAlertNotification } from './pushNotifications';
 
 // Explicitly load .env.local from the project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -29,40 +29,6 @@ const STOCK_DATA_PATH = path.resolve(process.cwd(), 'stock-data.json');
 interface AllStockData {
   [key: string]: StockItem[] | WeatherInfo | string;
   lastUpdated: string;
-}
-
-// Enhanced rare item detection
-const RARE_ITEMS = {
-  seeds: [
-    'Strawberry', 'Blueberry', 'Raspberry', 'Blackberry', 'Golden Seed',
-    'Diamond Seed', 'Emerald Seed', 'Ruby Seed', 'Sapphire Seed', 'Rainbow Seed'
-  ],
-  gear: [
-    'Harvest Tool', 'Watering Can', 'Fertilizer', 'Golden Shovel', 'Diamond Pickaxe',
-    'Legendary Scythe', 'Mythical Rake', 'Epic Hoe', 'Rare Trowel'
-  ],
-  eggs: [
-    'Uncommon Egg', 'Rare Egg', 'Epic Egg', 'Legendary Egg', 'Mythical Egg',
-    'Golden Egg', 'Diamond Egg', 'Rainbow Egg'
-  ]
-};
-
-function isRareItem(itemName: string, category: string): boolean {
-  const categoryKey = category.toLowerCase() as keyof typeof RARE_ITEMS;
-  return RARE_ITEMS[categoryKey]?.includes(itemName) || false;
-}
-
-function getRarityLevel(itemName: string): string {
-  if (itemName.includes('Golden') || itemName.includes('Diamond') || itemName.includes('Rainbow')) {
-    return 'Legendary';
-  }
-  if (itemName.includes('Epic') || itemName.includes('Mythical')) {
-    return 'Epic';
-  }
-  if (itemName.includes('Rare') || itemName.includes('Uncommon')) {
-    return 'Rare';
-  }
-  return 'Common';
 }
 
 function processMessage(message: Message) {
@@ -119,16 +85,13 @@ function processMessage(message: Message) {
         } else if (Array.isArray(parsedData)) {
           // Handle stock updates
           const stockItems = parsedData as StockItem[];
-          let rareItemCount = 0;
+          let notificationCount = 0;
           
-          // Check for rare items and send individual notifications
+          // Send individual notifications for each item to users who have it enabled
           stockItems.forEach(item => {
-            if (isRareItem(item.name, stockType)) {
-              const rarity = getRarityLevel(item.name);
-              console.log(`🌟 Rare item detected: ${item.name} (${rarity})`);
-              sendRareItemNotification(item.name, rarity, item.quantity, stockType.toLowerCase());
-              rareItemCount++;
-            }
+            console.log(`🔔 Checking notifications for ${item.name} (${item.quantity})`);
+            sendItemNotification(item.name, item.quantity, stockType);
+            notificationCount++;
           });
           
           // Send general stock update notification if there are items
@@ -140,9 +103,7 @@ function processMessage(message: Message) {
             );
           }
           
-          if (rareItemCount > 0) {
-            console.log(`🎉 Sent ${rareItemCount} rare item notifications for [${stockType}]`);
-          }
+          console.log(`🎉 Processed ${notificationCount} item notifications for [${stockType}]`);
         }
         // --- End Push Notification Integration ---
       } else {
@@ -156,15 +117,30 @@ function processMessage(message: Message) {
 }
 
 function initializeDiscordListener() {
+  console.log('🔧 Starting Discord listener initialization...');
+  
+  // Check environment variables
+  console.log('📋 Environment check:');
+  console.log(`   Bot Token: ${BOT_TOKEN ? '✅ Set' : '❌ Missing'}`);
+  console.log(`   Seed Channel: ${SEED_CHANNEL_ID ? '✅ Set' : '❌ Missing'}`);
+  console.log(`   Gear Channel: ${GEAR_CHANNEL_ID ? '✅ Set' : '❌ Missing'}`);
+  console.log(`   Egg Channel: ${EGG_CHANNEL_ID ? '✅ Set' : '❌ Missing'}`);
+  console.log(`   Cosmetic Channel: ${COSMETIC_CHANNEL_ID ? '✅ Set' : '❌ Missing'}`);
+  console.log(`   Weather Channel: ${WEATHER_CHANNEL_ID ? '✅ Set' : '❌ Missing'}`);
+  
   if (!BOT_TOKEN) {
     console.error('❌ Discord bot token not set. The listener will not start.');
+    console.error('   Please check your .env.local file and ensure DISCORD_BOT_TOKEN is set.');
     return;
   }
 
   if (Object.keys(channelConfig).length === 0) {
     console.error('❌ No channel IDs have been configured in the environment. The listener will not start.');
+    console.error('   Please check your .env.local file and ensure at least one channel ID is set.');
     return;
   }
+
+  console.log(`📊 Configured channels:`, Object.keys(channelConfig).map(id => `${channelConfig[id]} (${id})`));
 
   const client = new Client({
     intents: [
@@ -176,8 +152,20 @@ function initializeDiscordListener() {
 
   client.on(Events.ClientReady, (c) => {
     console.log(`🤖 Discord listener ready! Logged in as ${c.user.tag}`);
+    console.log(`🆔 Bot ID: ${c.user.id}`);
     console.log(`👂 Listening for stock updates in the following channels:`, Object.values(channelConfig));
-    console.log(`📊 Rare items configured:`, RARE_ITEMS);
+    console.log(`🔔 Per-item notification system enabled`);
+    
+    // Check if bot can see the configured channels
+    console.log('🔍 Checking channel access...');
+    Object.keys(channelConfig).forEach(channelId => {
+      const channel = client.channels.cache.get(channelId);
+      if (channel) {
+        console.log(`   ✅ ${channelConfig[channelId]}: Accessible`);
+      } else {
+        console.log(`   ❌ ${channelConfig[channelId]}: Not accessible (check permissions)`);
+      }
+    });
   });
 
   client.on(Events.MessageCreate, (message) => {
@@ -194,8 +182,24 @@ function initializeDiscordListener() {
     console.error('❌ Discord client error:', error);
   });
 
-  client.login(BOT_TOKEN).catch((error) => {
+  client.on(Events.Warn, (warning) => {
+    console.warn('⚠️ Discord client warning:', warning);
+  });
+
+  console.log('🔗 Attempting to connect to Discord...');
+  
+  client.login(BOT_TOKEN).then(() => {
+    console.log('✅ Discord login successful');
+  }).catch((error) => {
     console.error('❌ Failed to login to Discord:', error);
+    console.error('   Common issues:');
+    console.error('   - Invalid bot token');
+    console.error('   - Bot token expired');
+    console.error('   - Network connectivity issues');
+    console.error('   - Discord API rate limiting');
+    
+    // Exit process on login failure
+    process.exit(1);
   });
 }
 

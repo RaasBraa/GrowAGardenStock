@@ -17,6 +17,7 @@ interface PushTokenEntry {
   is_active: boolean;
   device_type?: 'ios' | 'android';
   app_version?: string;
+  preferences?: { [itemName: string]: boolean };
 }
 
 interface NotificationData {
@@ -26,7 +27,26 @@ interface NotificationData {
   type: 'rare_item_alert' | 'stock_update' | 'weather_alert';
   timestamp: string;
   channel?: string;
+  [key: string]: unknown; // Add index signature for compatibility
 }
+
+// All available items for notifications
+export const ALL_ITEMS = {
+  seeds: [
+    "Carrot", "Strawberry", "Blueberry", "Tomato", "Cauliflower", "Watermelon",
+    "Green Apple", "Avacado", "Banana", "Pineapple", "Kiwi", "Bell Pepper",
+    "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple"
+  ],
+  gear: [
+    "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
+    "Godly Sprinkler", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray",
+    "Favorite Tool", "Harvest Tool", "Friendship Pot"
+  ],
+  eggs: [
+    "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
+    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Summer Egg"
+  ]
+};
 
 function loadTokens(): PushTokenEntry[] {
   if (!fs.existsSync(TOKENS_PATH)) return [];
@@ -72,16 +92,17 @@ function updateTokenLastUsed(token: string): void {
 }
 
 function handleReceiptError(receipt: ExpoPushReceipt, token: string): void {
-  if (receipt.details?.error === 'DeviceNotRegistered') {
+  const details = receipt.details as { error?: string; message?: string } | undefined;
+  if (details?.error === 'DeviceNotRegistered') {
     console.log(`📱 Device not registered, removing token: ${token.substring(0, 20)}...`);
-  } else if (receipt.details?.error === 'MessageTooBig') {
+  } else if (details?.error === 'MessageTooBig') {
     console.error(`📏 Message too big for token: ${token.substring(0, 20)}...`);
-  } else if (receipt.details?.error === 'MessageRateExceeded') {
+  } else if (details?.error === 'MessageRateExceeded') {
     console.warn(`⚡ Rate limit exceeded for token: ${token.substring(0, 20)}...`);
-  } else if (receipt.details?.error === 'InvalidCredentials') {
+  } else if (details?.error === 'InvalidCredentials') {
     console.error(`🔐 Invalid credentials for token: ${token.substring(0, 20)}...`);
   } else {
-    console.error(`❌ Push notification error for token ${token.substring(0, 20)}...:`, receipt.details || receipt.message);
+    console.error(`❌ Push notification error for token ${token.substring(0, 20)}...:`, details || 'Unknown error');
   }
 }
 
@@ -123,13 +144,85 @@ async function sendChunkWithRetry(chunk: ExpoPushMessage[], retryCount = 0): Pro
   }
 }
 
+// Helper function to get tokens interested in a specific item
+function getTokensForItem(tokens: PushTokenEntry[], itemName: string): PushTokenEntry[] {
+  return tokens.filter(token => {
+    // If no preferences set, default to true (backward compatibility)
+    if (!token.preferences) return true;
+    return token.preferences[itemName] === true;
+  });
+}
+
+export async function sendItemNotification(itemName: string, quantity: number, category: string) {
+  // Clean up expired tokens first
+  cleanupExpiredTokens();
+  
+  const allTokens = loadTokens().filter(t => t.is_active);
+  const interestedTokens = getTokensForItem(allTokens, itemName);
+  
+  if (interestedTokens.length === 0) {
+    console.log(`📭 No users have notifications enabled for ${itemName}`);
+    return;
+  }
+
+  const notificationData: NotificationData = {
+    itemName,
+    rarity: 'Common', // Default, can be enhanced later
+    quantity,
+    type: 'rare_item_alert',
+    timestamp: new Date().toISOString(),
+    channel: category.toLowerCase()
+  };
+
+  const messages: ExpoPushMessage[] = interestedTokens.map(t => ({
+    to: t.token,
+    sound: 'default',
+    title: `${itemName} in Stock! 🌱`,
+    body: `${itemName} is now available! Quantity: ${quantity}`,
+    data: notificationData,
+    priority: 'high',
+    channelId: 'item-alerts',
+    categoryId: 'item-alerts',
+    badge: 1,
+  }));
+
+  const chunks = expo.chunkPushNotifications(messages);
+  const allFailedTokens: string[] = [];
+
+  console.log(`📤 Sending ${itemName} notifications to ${interestedTokens.length} users in ${chunks.length} chunks...`);
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const { failedTokens } = await sendChunkWithRetry(chunk);
+    allFailedTokens.push(...failedTokens);
+    
+    // Add delay between chunks to respect rate limits
+    if (i < chunks.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
+    }
+  }
+
+  // Remove failed tokens
+  if (allFailedTokens.length > 0) {
+    const allTokens = loadTokens();
+    const activeTokens = allTokens.filter(t => !allFailedTokens.includes(t.token));
+    saveTokens(activeTokens);
+    console.log(`🗑️ Removed ${allFailedTokens.length} failed tokens`);
+  }
+
+  const successCount = messages.length - allFailedTokens.length;
+  console.log(`✅ ${itemName} notification sent successfully to ${successCount}/${messages.length} devices`);
+}
+
 export async function sendRareItemNotification(itemName: string, rarity: string, quantity: number, channel?: string) {
   // Clean up expired tokens first
   cleanupExpiredTokens();
   
-  const tokens = loadTokens().filter(t => t.is_active);
-  if (tokens.length === 0) {
-    console.log('📭 No active tokens to send notifications to');
+  const allTokens = loadTokens().filter(t => t.is_active);
+  const interestedTokens = getTokensForItem(allTokens, itemName);
+  
+  if (interestedTokens.length === 0) {
+    console.log(`📭 No users have notifications enabled for ${itemName}`);
     return;
   }
 
@@ -142,15 +235,15 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
     channel
   };
 
-  const messages: ExpoPushMessage[] = tokens.map(t => ({
+  const messages: ExpoPushMessage[] = interestedTokens.map(t => ({
     to: t.token,
     sound: 'default',
     title: `Rare Item Alert! 🌱`,
     body: `${itemName} (${rarity}) is in stock! Quantity: ${quantity}`,
     data: notificationData,
     priority: 'high',
-    channelId: 'rare-items', // Android notification channel
-    categoryId: 'rare-items', // iOS notification category
+    channelId: 'rare-items',
+    categoryId: 'rare-items',
     subtitle: `Rarity: ${rarity}`,
     badge: 1,
   }));
@@ -158,7 +251,7 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
   const chunks = expo.chunkPushNotifications(messages);
   const allFailedTokens: string[] = [];
 
-  console.log(`📤 Sending ${messages.length} notifications in ${chunks.length} chunks...`);
+  console.log(`📤 Sending ${messages.length} rare item notifications in ${chunks.length} chunks...`);
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
@@ -293,4 +386,9 @@ export function getTokenStats() {
     expired: expiredTokens.length,
     lastCleanup: new Date().toISOString()
   };
+}
+
+// Utility function to get all available items
+export function getAllItems() {
+  return ALL_ITEMS;
 } 

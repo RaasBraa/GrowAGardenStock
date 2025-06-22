@@ -2,67 +2,63 @@
   "seeds": [
     {
       "name": "Carrot",
-      "quantity": 21
-    },
-    {
-      "name": "Cauliflower",
-      "quantity": 2
-    },
-    {
-      "name": "Strawberry",
-      "quantity": 4
-    },
-    {
-      "name": "Tomato",
-      "quantity": 3
+      "quantity": 13
     },
     {
       "name": "Blueberry",
       "quantity": 2
+    },
+    {
+      "name": "Tomato",
+      "quantity": 1
+    },
+    {
+      "name": "Strawberry",
+      "quantity": 3
     }
   ],
-  "lastUpdated": "2025-06-22T00:05:47.320Z",
+  "lastUpdated": "2025-06-22T11:31:03.441Z",
   "gear": [
     {
-      "name": "Advanced Sprinkler",
-      "quantity": 1
-    },
-    {
       "name": "Cleaning Spray",
-      "quantity": 3
-    },
-    {
-      "name": "Trowel",
-      "quantity": 2
-    },
-    {
-      "name": "Watering Can",
-      "quantity": 1
-    },
-    {
-      "name": "Recall Wrench",
-      "quantity": 3
-    },
-    {
-      "name": "Favorite Tool",
-      "quantity": 1
+      "quantity": 5
     },
     {
       "name": "Harvest Tool",
+      "quantity": 1
+    },
+    {
+      "name": "Trowel",
       "quantity": 3
+    },
+    {
+      "name": "Watering Can",
+      "quantity": 2
+    },
+    {
+      "name": "Favorite Tool",
+      "quantity": 3
+    },
+    {
+      "name": "Recall Wrench",
+      "quantity": 1
+    },
+    {
+      "name": "Godly Sprinkler",
+      "quantity": 1
     }
   ],
   "eggs": [
     {
-      "name": "Common Egg",
-      "quantity": 1
-    },
-    {
-      "name": "Uncommon Egg",
+      "name": "Common Summer Egg",
       "quantity": 1
     },
     {
       "name": "Common Egg",
+      "quantity": 1
+    },
+    {
+      "name": "Common Summer Egg",
       "quantity": 1
     }
   ]

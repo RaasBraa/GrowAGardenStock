@@ -14,12 +14,14 @@ interface PushTokenEntry {
   app_version?: string;
   user_agent?: string;
   ip_address?: string;
+  preferences?: { [itemName: string]: boolean };
 }
 
 interface RegisterRequest {
   token: string;
   device_type?: 'ios' | 'android';
   app_version?: string;
+  preferences?: { [itemName: string]: boolean };
 }
 
 function loadTokens(): PushTokenEntry[] {
@@ -78,7 +80,7 @@ function getClientIP(req: NextRequest): string {
 export async function POST(req: NextRequest) {
   try {
     const body: RegisterRequest = await req.json();
-    const { token, device_type, app_version } = body;
+    const { token, device_type, app_version, preferences } = body;
     
     // Validate token
     const validation = validateToken(token);
@@ -104,6 +106,7 @@ export async function POST(req: NextRequest) {
       existingToken.is_active = true;
       if (device_type) existingToken.device_type = device_type;
       if (app_version) existingToken.app_version = app_version;
+      if (preferences) existingToken.preferences = preferences;
       existingToken.user_agent = req.headers.get('user-agent') || undefined;
       existingToken.ip_address = getClientIP(req);
       
@@ -125,6 +128,7 @@ export async function POST(req: NextRequest) {
       is_active: true,
       device_type,
       app_version,
+      preferences,
       user_agent: req.headers.get('user-agent') || undefined,
       ip_address: getClientIP(req)
     };
