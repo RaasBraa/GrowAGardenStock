@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 import { parseStockEmbed, StockItem, parseWeatherEmbed, WeatherInfo } from './stock-parser';
-import { sendRareItemNotification } from './pushNotifications';
+import { sendRareItemNotification, sendStockUpdateNotification, sendWeatherAlertNotification } from './pushNotifications';
 
 // Explicitly load .env.local from the project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -31,12 +31,46 @@ interface AllStockData {
   lastUpdated: string;
 }
 
+// Enhanced rare item detection
+const RARE_ITEMS = {
+  seeds: [
+    'Strawberry', 'Blueberry', 'Raspberry', 'Blackberry', 'Golden Seed',
+    'Diamond Seed', 'Emerald Seed', 'Ruby Seed', 'Sapphire Seed', 'Rainbow Seed'
+  ],
+  gear: [
+    'Harvest Tool', 'Watering Can', 'Fertilizer', 'Golden Shovel', 'Diamond Pickaxe',
+    'Legendary Scythe', 'Mythical Rake', 'Epic Hoe', 'Rare Trowel'
+  ],
+  eggs: [
+    'Uncommon Egg', 'Rare Egg', 'Epic Egg', 'Legendary Egg', 'Mythical Egg',
+    'Golden Egg', 'Diamond Egg', 'Rainbow Egg'
+  ]
+};
+
+function isRareItem(itemName: string, category: string): boolean {
+  const categoryKey = category.toLowerCase() as keyof typeof RARE_ITEMS;
+  return RARE_ITEMS[categoryKey]?.includes(itemName) || false;
+}
+
+function getRarityLevel(itemName: string): string {
+  if (itemName.includes('Golden') || itemName.includes('Diamond') || itemName.includes('Rainbow')) {
+    return 'Legendary';
+  }
+  if (itemName.includes('Epic') || itemName.includes('Mythical')) {
+    return 'Epic';
+  }
+  if (itemName.includes('Rare') || itemName.includes('Uncommon')) {
+    return 'Rare';
+  }
+  return 'Common';
+}
+
 function processMessage(message: Message) {
   const stockType = channelConfig[message.channel.id];
 
   // Only process messages from a configured channel that are sent by a bot
   if (stockType && message.author.bot) {
-    console.log(`Processing message in [${stockType}] channel.`);
+    console.log(`📨 Processing message in [${stockType}] channel.`);
     
     if (message.embeds.length > 0) {
       const embed = message.embeds[0].toJSON();
@@ -50,59 +84,85 @@ function processMessage(message: Message) {
         case 'Gear':
         case 'Eggs':
         case 'Cosmetics':
-          parsedData = parseStockEmbed(embed); // Assumes field name is "Current Stock"
+          parsedData = parseStockEmbed(embed);
           break;
       }
       
       if (parsedData) {
-          console.log(`Parsed [${stockType}] data:`, parsedData);
+        console.log(`✅ Parsed [${stockType}] data:`, parsedData);
 
-          // Read existing data to merge, or create new object
-          let allStockData: Partial<AllStockData> = {};
-          try {
-              if (fs.existsSync(STOCK_DATA_PATH)) {
-                  allStockData = JSON.parse(fs.readFileSync(STOCK_DATA_PATH, 'utf-8'));
-              }
-          } catch (e) {
-              console.error("Error reading existing stock data file", e);
+        // Read existing data to merge, or create new object
+        let allStockData: Partial<AllStockData> = {};
+        try {
+          if (fs.existsSync(STOCK_DATA_PATH)) {
+            allStockData = JSON.parse(fs.readFileSync(STOCK_DATA_PATH, 'utf-8'));
           }
+        } catch (e) {
+          console.error("❌ Error reading existing stock data file", e);
+        }
 
-          // Update the data for the specific stock type
-          allStockData[stockType.toLowerCase()] = parsedData;
-          allStockData.lastUpdated = new Date().toISOString();
+        // Update the data for the specific stock type
+        allStockData[stockType.toLowerCase()] = parsedData;
+        allStockData.lastUpdated = new Date().toISOString();
+        
+        fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
+        console.log(`💾 Successfully saved [${stockType}] data to ${STOCK_DATA_PATH}`);
+
+        // --- Enhanced Push Notification Integration ---
+        if (stockType === 'Weather' && !Array.isArray(parsedData)) {
+          // Handle weather alerts
+          const weatherInfo = parsedData as WeatherInfo;
+          if (weatherInfo.current && weatherInfo.ends) {
+            console.log(`🌤️ Sending weather alert: ${weatherInfo.current}`);
+            sendWeatherAlertNotification(weatherInfo.current, `Ends: ${weatherInfo.ends}`);
+          }
+        } else if (Array.isArray(parsedData)) {
+          // Handle stock updates
+          const stockItems = parsedData as StockItem[];
+          let rareItemCount = 0;
           
-          fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
-          console.log(`Successfully parsed and saved [${stockType}] data to ${STOCK_DATA_PATH}`);
-
-          // --- Push Notification Integration ---
-          // Define rare items (for demo, hardcoded list)
-          const rareItems = ['Strawberry', 'Blueberry', 'Harvest Tool', 'Uncommon Egg', 'Legendary Seed'];
-          if (['Seeds', 'Gear', 'Eggs'].includes(stockType) && Array.isArray(parsedData)) {
-            parsedData.forEach(item => {
-              if (rareItems.includes(item.name)) {
-                sendRareItemNotification(item.name, 'Rare', item.quantity);
-              }
-            });
+          // Check for rare items and send individual notifications
+          stockItems.forEach(item => {
+            if (isRareItem(item.name, stockType)) {
+              const rarity = getRarityLevel(item.name);
+              console.log(`🌟 Rare item detected: ${item.name} (${rarity})`);
+              sendRareItemNotification(item.name, rarity, item.quantity, stockType.toLowerCase());
+              rareItemCount++;
+            }
+          });
+          
+          // Send general stock update notification if there are items
+          if (stockItems.length > 0) {
+            console.log(`📦 Sending stock update for ${stockItems.length} ${stockType.toLowerCase()} items`);
+            sendStockUpdateNotification(
+              stockType.toLowerCase() as 'seeds' | 'gear' | 'eggs' | 'cosmetics',
+              stockItems.length
+            );
           }
-          // --- End Push Notification Integration ---
+          
+          if (rareItemCount > 0) {
+            console.log(`🎉 Sent ${rareItemCount} rare item notifications for [${stockType}]`);
+          }
+        }
+        // --- End Push Notification Integration ---
       } else {
-           console.log(`Could not parse data for [${stockType}].`);
+        console.log(`❌ Could not parse data for [${stockType}].`);
       }
 
     } else {
-      console.log('Message from bot does not contain any embeds. Ignoring.');
+      console.log('📝 Message from bot does not contain any embeds. Ignoring.');
     }
   }
 }
 
 function initializeDiscordListener() {
   if (!BOT_TOKEN) {
-    console.error('Discord bot token not set. The listener will not start.');
+    console.error('❌ Discord bot token not set. The listener will not start.');
     return;
   }
 
   if (Object.keys(channelConfig).length === 0) {
-    console.error('No channel IDs have been configured in the environment. The listener will not start.');
+    console.error('❌ No channel IDs have been configured in the environment. The listener will not start.');
     return;
   }
 
@@ -115,8 +175,9 @@ function initializeDiscordListener() {
   });
 
   client.on(Events.ClientReady, (c) => {
-    console.log(`Discord listener ready! Logged in as ${c.user.tag}`);
-    console.log(`Listening for stock updates in the following channels:`, Object.values(channelConfig));
+    console.log(`🤖 Discord listener ready! Logged in as ${c.user.tag}`);
+    console.log(`👂 Listening for stock updates in the following channels:`, Object.values(channelConfig));
+    console.log(`📊 Rare items configured:`, RARE_ITEMS);
   });
 
   client.on(Events.MessageCreate, (message) => {
@@ -129,7 +190,13 @@ function initializeDiscordListener() {
     processMessage(newMessage as Message);
   });
 
-  client.login(BOT_TOKEN).catch(console.error);
+  client.on(Events.Error, (error) => {
+    console.error('❌ Discord client error:', error);
+  });
+
+  client.login(BOT_TOKEN).catch((error) => {
+    console.error('❌ Failed to login to Discord:', error);
+  });
 }
 
 // Start the listener

@@ -2,15 +2,15 @@
   "seeds": [
     {
       "name": "Carrot",
-      "quantity": 7
+      "quantity": 21
     },
     {
-      "name": "Bamboo",
-      "quantity": 17
+      "name": "Cauliflower",
+      "quantity": 2
     },
     {
       "name": "Strawberry",
-      "quantity": 3
+      "quantity": 4
     },
     {
       "name": "Tomato",
@@ -18,22 +18,26 @@
     },
     {
       "name": "Blueberry",
-      "quantity": 4
+      "quantity": 2
     }
   ],
-  "lastUpdated": "2025-06-18T15:30:52.751Z",
+  "lastUpdated": "2025-06-22T00:05:47.320Z",
   "gear": [
     {
-      "name": "Cleaning Spray",
+      "name": "Advanced Sprinkler",
       "quantity": 1
     },
     {
-      "name": "Trowel",
+      "name": "Cleaning Spray",
       "quantity": 3
     },
     {
+      "name": "Trowel",
+      "quantity": 2
+    },
+    {
       "name": "Watering Can",
-      "quantity": 3
+      "quantity": 1
     },
     {
       "name": "Recall Wrench",
@@ -41,11 +45,11 @@
     },
     {
       "name": "Favorite Tool",
-      "quantity": 3
+      "quantity": 1
     },
     {
       "name": "Harvest Tool",
-      "quantity": 1
+      "quantity": 3
     }
   ],
   "eggs": [
