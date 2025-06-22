@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 import { parseStockEmbed, StockItem, parseWeatherEmbed, WeatherInfo } from './stock-parser';
-import { sendItemNotification, sendStockUpdateNotification, sendWeatherAlertNotification } from './pushNotifications';
+import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications';
 
 // Explicitly load .env.local from the project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -92,15 +92,6 @@ async function processMessage(message: Message) {
             console.log(`🔔 Checking notifications for ${item.name} (${item.quantity})`);
             await sendItemNotification(item.name, item.quantity, stockType);
             notificationCount++;
-          }
-          
-          // Send general stock update notification if there are items
-          if (stockItems.length > 0) {
-            console.log(`📦 Sending stock update for ${stockItems.length} ${stockType.toLowerCase()} items`);
-            await sendStockUpdateNotification(
-              stockType.toLowerCase() as 'seeds' | 'gear' | 'eggs' | 'cosmetics',
-              stockItems.length
-            );
           }
           
           console.log(`🎉 Processed ${notificationCount} item notifications for [${stockType}]`);

@@ -289,52 +289,6 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
   console.log(`✅ Notification sent successfully to ${successCount}/${messages.length} devices`);
 }
 
-export async function sendStockUpdateNotification(updateType: 'seeds' | 'gear' | 'eggs' | 'cosmetics', itemCount: number) {
-  cleanupExpiredTokens();
-  
-  const tokens = loadTokens().filter(t => t.is_active);
-  if (tokens.length === 0) return;
-
-  const notificationData: NotificationData = {
-    itemName: `${updateType} update`,
-    rarity: 'update',
-    quantity: itemCount,
-    type: 'stock_update',
-    timestamp: new Date().toISOString(),
-    channel: updateType
-  };
-
-  const messages: ExpoPushMessage[] = tokens.map(t => ({
-    to: t.token,
-    sound: 'default',
-    title: `New ${updateType} in Stock!`,
-    body: `The shop has been updated with ${itemCount} new ${updateType}.`,
-    data: { ...notificationData },
-    priority: 'normal',
-    channelId: 'stock-updates',
-    categoryId: 'stock-updates',
-  }));
-
-  const chunks = expo.chunkPushNotifications(messages);
-  const allFailedTokens: string[] = [];
-
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    const { failedTokens } = await sendChunkWithRetry(chunk);
-    allFailedTokens.push(...failedTokens);
-    
-    if (i < chunks.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
-    }
-  }
-
-  if (allFailedTokens.length > 0) {
-    const allTokens = loadTokens();
-    const activeTokens = allTokens.filter(t => !allFailedTokens.includes(t.token));
-    saveTokens(activeTokens);
-  }
-}
-
 export async function sendWeatherAlertNotification(weatherType: string, description: string) {
   cleanupExpiredTokens();
   
