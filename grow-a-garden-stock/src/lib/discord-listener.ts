@@ -31,7 +31,7 @@ interface AllStockData {
   lastUpdated: string;
 }
 
-function processMessage(message: Message) {
+async function processMessage(message: Message) {
   const stockType = channelConfig[message.channel.id];
 
   // Process all messages from configured channels (not just bot messages)
@@ -80,7 +80,7 @@ function processMessage(message: Message) {
           const weatherInfo = parsedData as WeatherInfo;
           if (weatherInfo.current && weatherInfo.ends) {
             console.log(`🌤️ Sending weather alert: ${weatherInfo.current}`);
-            sendWeatherAlertNotification(weatherInfo.current, `Ends: ${weatherInfo.ends}`);
+            await sendWeatherAlertNotification(weatherInfo.current, `Ends: ${weatherInfo.ends}`);
           }
         } else if (Array.isArray(parsedData)) {
           // Handle stock updates
@@ -88,16 +88,16 @@ function processMessage(message: Message) {
           let notificationCount = 0;
           
           // Send individual notifications for each item to users who have it enabled
-          stockItems.forEach(item => {
+          for (const item of stockItems) {
             console.log(`🔔 Checking notifications for ${item.name} (${item.quantity})`);
-            sendItemNotification(item.name, item.quantity, stockType);
+            await sendItemNotification(item.name, item.quantity, stockType);
             notificationCount++;
-          });
+          }
           
           // Send general stock update notification if there are items
           if (stockItems.length > 0) {
             console.log(`📦 Sending stock update for ${stockItems.length} ${stockType.toLowerCase()} items`);
-            sendStockUpdateNotification(
+            await sendStockUpdateNotification(
               stockType.toLowerCase() as 'seeds' | 'gear' | 'eggs' | 'cosmetics',
               stockItems.length
             );
@@ -168,14 +168,14 @@ function initializeDiscordListener() {
     });
   });
 
-  client.on(Events.MessageCreate, (message) => {
-    processMessage(message);
+  client.on(Events.MessageCreate, async (message) => {
+    await processMessage(message);
   });
 
-  client.on(Events.MessageUpdate, (oldMessage, newMessage) => {
+  client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
     // The newMessage object may be partial, so we pass it to our handler
     // which is robust enough to handle it.
-    processMessage(newMessage as Message);
+    await processMessage(newMessage as Message);
   });
 
   client.on(Events.Error, (error) => {

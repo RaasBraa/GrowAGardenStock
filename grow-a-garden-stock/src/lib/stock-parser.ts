@@ -11,23 +11,31 @@ export interface WeatherInfo {
 }
 
 export function parseStockEmbed(embed: APIEmbed): StockItem[] {
-  // Find the field that contains the stock information
-  // It could be named "Current Stock" or "👗 Cosmetics Stock Update" etc.
-  // The most reliable field is the one that is not "Next Update" and is not inline
-  const stockField = embed.fields?.find(field => field.name.toLowerCase().includes('stock') || (field.inline === false && field.name !== "Next Update"));
-  
-  if (!stockField || !stockField.value) {
-    console.warn('Could not find a valid stock field in the embed.');
-    return [];
+  // Find the field that contains the stock information.
+  // The most reliable way is to find a field whose value contains item quantities like (21x).
+  const stockField = embed.fields?.find(field => field.value.includes('(x)'));
+
+  if (!stockField) {
+    console.warn('Could not find a valid stock field in the embed by looking for quantities.');
+    // Fallback for cosmetics or other items that might not have quantities listed
+    const fallbackField = embed.fields?.find(field => field.name.toLowerCase().includes('stock') || !field.inline);
+     if (!fallbackField) {
+        console.error('Could not find any usable stock field in the embed.');
+        return [];
+     }
+     console.log('Using fallback field for parsing:', fallbackField.name);
+     return parseStockFromField(fallbackField.value);
   }
 
+  return parseStockFromField(stockField.value);
+}
+
+// Helper function to abstract the parsing logic from a field's value string
+function parseStockFromField(fieldValue: string): StockItem[] {
   const stockItems: StockItem[] = [];
-  // The regex needs to handle cases with and without custom emojis
-  const lines = stockField.value.split('\n');
+  const lines = fieldValue.split('\n');
 
   for (const line of lines) {
-    // A special case for items that might not have a quantity, like the cosmetics.
-    // If no quantity is found, assume 1.
     const quantityMatch = line.match(/\((\d+)x\)/);
     const nameMatch = line.match(/\*\*(.*?)\*\*/);
 
@@ -37,7 +45,6 @@ export function parseStockEmbed(embed: APIEmbed): StockItem[] {
         stockItems.push({ name, quantity });
     }
   }
-
   return stockItems;
 }
 
