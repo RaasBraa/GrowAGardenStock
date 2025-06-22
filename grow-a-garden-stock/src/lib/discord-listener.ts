@@ -27,7 +27,7 @@ if (WEATHER_CHANNEL_ID) channelConfig[WEATHER_CHANNEL_ID] = 'Weather';
 const STOCK_DATA_PATH = path.resolve(process.cwd(), 'stock-data.json');
 
 interface AllStockData {
-  [key: string]: StockItem[] | WeatherInfo | string;
+  [key: string]: StockItem[] | WeatherInfo | string | { items: StockItem[] | WeatherInfo; lastUpdated: string };
   lastUpdated: string;
 }
 
@@ -67,12 +67,26 @@ async function processMessage(message: Message) {
           console.error("❌ Error reading existing stock data file", e);
         }
 
-        // Update the data for the specific stock type
-        allStockData[stockType.toLowerCase()] = parsedData;
-        allStockData.lastUpdated = new Date().toISOString();
+        // Update the data for the specific stock type with individual timestamp
+        const currentTime = new Date().toISOString();
+        const categoryKey = stockType.toLowerCase();
+        
+        if (stockType === 'Weather') {
+          // Weather data structure remains the same
+          allStockData[categoryKey] = parsedData;
+        } else {
+          // Stock items get the new structure with individual timestamp
+          allStockData[categoryKey] = {
+            items: parsedData,
+            lastUpdated: currentTime
+          };
+        }
+        
+        // Update the main lastUpdated timestamp for backward compatibility
+        allStockData.lastUpdated = currentTime;
         
         fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
-        console.log(`💾 Successfully saved [${stockType}] data to ${STOCK_DATA_PATH}`);
+        console.log(`💾 Successfully saved [${stockType}] data to ${STOCK_DATA_PATH} with timestamp ${currentTime}`);
 
         // --- Enhanced Push Notification Integration ---
         if (stockType === 'Weather' && !Array.isArray(parsedData)) {
