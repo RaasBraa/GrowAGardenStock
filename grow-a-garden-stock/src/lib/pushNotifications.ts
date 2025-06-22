@@ -34,7 +34,7 @@ interface NotificationData {
 export const ALL_ITEMS = {
   seeds: [
     "Carrot", "Strawberry", "Blueberry", "Tomato", "Cauliflower", "Watermelon",
-    "Green Apple", "Avacado", "Banana", "Pineapple", "Kiwi", "Bell Pepper",
+    "Green Apple", "Avocado", "Banana", "Pineapple", "Kiwi", "Bell Pepper",
     "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple"
   ],
   gear: [
@@ -44,7 +44,7 @@ export const ALL_ITEMS = {
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
-    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Summer Egg", "Paradise Egg"
+    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg"
   ]
 };
 
