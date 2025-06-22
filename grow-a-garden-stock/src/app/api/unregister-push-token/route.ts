@@ -55,7 +55,7 @@ function validateToken(token: string): { isValid: boolean; error?: string } {
   return { isValid: true };
 }
 
-export async function DELETE(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const body: UnregisterRequest = await req.json();
     const { token } = body;
