@@ -27,7 +27,12 @@ if (WEATHER_CHANNEL_ID) channelConfig[WEATHER_CHANNEL_ID] = 'Weather';
 const STOCK_DATA_PATH = path.resolve(process.cwd(), 'stock-data.json');
 
 interface AllStockData {
-  [key: string]: StockItem[] | WeatherInfo | string | { items: StockItem[] | WeatherInfo; lastUpdated: string };
+  [key: string]: StockItem[] | WeatherInfo | string | { 
+    items: StockItem[] | WeatherInfo; 
+    lastUpdated: string; 
+    nextUpdate: string; 
+    refreshIntervalMinutes: number; 
+  };
   lastUpdated: string;
 }
 
@@ -71,14 +76,35 @@ async function processMessage(message: Message) {
         const currentTime = new Date().toISOString();
         const categoryKey = stockType.toLowerCase();
         
+        // Define refresh intervals in minutes for each category
+        const refreshIntervals = {
+          seeds: 5,
+          gear: 5,
+          eggs: 30,
+          cosmetics: 240
+        };
+        
         if (stockType === 'Weather') {
           // Weather data structure remains the same
           allStockData[categoryKey] = parsedData;
         } else {
-          // Stock items get the new structure with individual timestamp
+          // Calculate next update time based on refresh interval
+          const refreshIntervalMinutes = refreshIntervals[categoryKey as keyof typeof refreshIntervals] || 5;
+          
+          // Calculate the next scheduled update time based on the interval
+          // This ensures consistent timing even if updates arrive late
+          const now = new Date(currentTime);
+          const minutesSinceEpoch = Math.floor(now.getTime() / (1000 * 60));
+          const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervalMinutes);
+          const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervalMinutes;
+          const nextUpdate = new Date(nextScheduledMinute * 60 * 1000).toISOString();
+          
+          // Stock items get the new structure with individual timestamp and next update
           allStockData[categoryKey] = {
             items: parsedData,
-            lastUpdated: currentTime
+            lastUpdated: currentTime,
+            nextUpdate: nextUpdate,
+            refreshIntervalMinutes: refreshIntervalMinutes
           };
         }
         
