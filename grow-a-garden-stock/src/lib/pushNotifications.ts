@@ -45,6 +45,9 @@ export const ALL_ITEMS = {
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
     "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg"
+  ],
+  weather: [
+    "Weather Alerts"
   ]
 };
 
@@ -159,6 +162,15 @@ function getTokensForItem(tokens: PushTokenEntry[], itemName: string): PushToken
     // If no preferences set, default to true (backward compatibility)
     if (!token.preferences) return true;
     return token.preferences[itemName] === true;
+  });
+}
+
+// Helper function to get tokens interested in weather notifications
+function getTokensForWeather(tokens: PushTokenEntry[]): PushTokenEntry[] {
+  return tokens.filter(token => {
+    // If no preferences set, default to true (backward compatibility)
+    if (!token.preferences) return true;
+    return token.preferences["Weather Alerts"] === true;
   });
 }
 
@@ -292,8 +304,13 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
 export async function sendWeatherAlertNotification(weatherType: string, description: string) {
   cleanupExpiredTokens();
   
-  const tokens = loadTokens().filter(t => t.is_active);
-  if (tokens.length === 0) return;
+  const allTokens = loadTokens().filter(t => t.is_active);
+  const interestedTokens = getTokensForWeather(allTokens);
+  
+  if (interestedTokens.length === 0) {
+    console.log(`📭 No users have weather notifications enabled`);
+    return;
+  }
 
   const notificationData: NotificationData = {
     itemName: weatherType,
@@ -304,7 +321,7 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
     channel: 'weather'
   };
 
-  const messages: ExpoPushMessage[] = tokens.map(t => ({
+  const messages: ExpoPushMessage[] = interestedTokens.map(t => ({
     to: t.token,
     sound: 'default',
     title: `Weather Alert: ${weatherType}`,
@@ -317,6 +334,8 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
 
   const chunks = expo.chunkPushNotifications(messages);
   const allFailedTokens: string[] = [];
+
+  console.log(`📤 Sending weather alert notifications to ${interestedTokens.length} users in ${chunks.length} chunks...`);
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
@@ -332,7 +351,11 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
     const allTokens = loadTokens();
     const activeTokens = allTokens.filter(t => !allFailedTokens.includes(t.token));
     saveTokens(activeTokens);
+    console.log(`🗑️ Removed ${allFailedTokens.length} failed tokens`);
   }
+
+  const successCount = messages.length - allFailedTokens.length;
+  console.log(`✅ Weather alert sent successfully to ${successCount}/${messages.length} devices`);
 }
 
 // Utility function to get token statistics
