@@ -41,7 +41,7 @@ async function processMessage(message: Message) {
 
   // Process all messages from configured channels (not just bot messages)
   if (stockType) {
-    console.log(`📨 Processing message in [${stockType}] channel.`);
+    console.log(`�� Processing Discord backup message in [${stockType}] channel.`);
     
     if (message.embeds.length > 0) {
       const embed = message.embeds[0].toJSON();
@@ -60,7 +60,7 @@ async function processMessage(message: Message) {
       }
       
       if (parsedData) {
-        console.log(`✅ Parsed [${stockType}] data:`, parsedData);
+        console.log(`✅ Parsed Discord backup [${stockType}] data:`, parsedData);
 
         // Read existing data to merge, or create new object
         let allStockData: Partial<AllStockData> = {};
@@ -112,14 +112,14 @@ async function processMessage(message: Message) {
         allStockData.lastUpdated = currentTime;
         
         fs.writeFileSync(STOCK_DATA_PATH, JSON.stringify(allStockData, null, 2));
-        console.log(`💾 Successfully saved [${stockType}] data to ${STOCK_DATA_PATH} with timestamp ${currentTime}`);
+        console.log(`💾 Successfully saved Discord backup [${stockType}] data to ${STOCK_DATA_PATH} with timestamp ${currentTime}`);
 
         // --- Enhanced Push Notification Integration ---
         if (stockType === 'Weather' && !Array.isArray(parsedData)) {
           // Handle weather alerts
           const weatherInfo = parsedData as WeatherInfo;
           if (weatherInfo.current && weatherInfo.ends) {
-            console.log(`🌤️ Sending weather alert: ${weatherInfo.current}`);
+            console.log(`🌤️ Sending Discord backup weather alert: ${weatherInfo.current}`);
             await sendWeatherAlertNotification(weatherInfo.current, `Ends: ${weatherInfo.ends}`);
           }
         } else if (Array.isArray(parsedData)) {
@@ -129,26 +129,26 @@ async function processMessage(message: Message) {
           
           // Send individual notifications for each item to users who have it enabled
           for (const item of stockItems) {
-            console.log(`🔔 Checking notifications for ${item.name} (${item.quantity})`);
+            console.log(`🔔 Checking Discord backup notifications for ${item.name} (${item.quantity})`);
             await sendItemNotification(item.name, item.quantity, stockType);
             notificationCount++;
           }
           
-          console.log(`🎉 Processed ${notificationCount} item notifications for [${stockType}]`);
+          console.log(`🎉 Processed ${notificationCount} Discord backup item notifications for [${stockType}]`);
         }
         // --- End Push Notification Integration ---
       } else {
-        console.log(`❌ Could not parse data for [${stockType}].`);
+        console.log(`❌ Could not parse Discord backup data for [${stockType}].`);
       }
 
     } else {
-      console.log('📝 Message does not contain any embeds. Ignoring.');
+      console.log('📝 Discord backup message does not contain any embeds. Ignoring.');
     }
   }
 }
 
 function initializeDiscordListener() {
-  console.log('🔧 Starting Discord listener initialization...');
+  console.log('🔧 Starting Discord backup listener initialization...');
   
   // Check environment variables
   console.log('📋 Environment check:');
@@ -160,18 +160,18 @@ function initializeDiscordListener() {
   console.log(`   Weather Channel: ${WEATHER_CHANNEL_ID ? '✅ Set' : '❌ Missing'}`);
   
   if (!BOT_TOKEN) {
-    console.error('❌ Discord bot token not set. The listener will not start.');
+    console.error('❌ Discord bot token not set. The backup listener will not start.');
     console.error('   Please check your .env.local file and ensure DISCORD_BOT_TOKEN is set.');
     return;
   }
 
   if (Object.keys(channelConfig).length === 0) {
-    console.error('❌ No channel IDs have been configured in the environment. The listener will not start.');
+    console.error('❌ No channel IDs have been configured in the environment. The backup listener will not start.');
     console.error('   Please check your .env.local file and ensure at least one channel ID is set.');
     return;
   }
 
-  console.log(`📊 Configured channels:`, Object.keys(channelConfig).map(id => `${channelConfig[id]} (${id})`));
+  console.log(`📊 Configured Discord backup channels:`, Object.keys(channelConfig).map(id => `${channelConfig[id]} (${id})`));
 
   const client = new Client({
     intents: [
@@ -181,14 +181,14 @@ function initializeDiscordListener() {
     ],
   });
 
-  client.on(Events.ClientReady, (c) => {
-    console.log(`🤖 Discord listener ready! Logged in as ${c.user.tag}`);
+  client.on(Events.ClientReady, async (c) => {
+    console.log(`🤖 Discord backup listener ready! Logged in as ${c.user.tag}`);
     console.log(`🆔 Bot ID: ${c.user.id}`);
-    console.log(`👂 Listening for stock updates in the following channels:`, Object.values(channelConfig));
+    console.log(`👂 Listening for backup stock updates in the following Discord channels:`, Object.values(channelConfig));
     console.log(`🔔 Per-item notification system enabled`);
     
     // Check if bot can see the configured channels
-    console.log('🔍 Checking channel access...');
+    console.log('🔍 Checking Discord backup channel access...');
     Object.keys(channelConfig).forEach(channelId => {
       const channel = client.channels.cache.get(channelId);
       if (channel) {
@@ -197,6 +197,9 @@ function initializeDiscordListener() {
         console.log(`   ❌ ${channelConfig[channelId]}: Not accessible (check permissions)`);
       }
     });
+
+    console.log('⚠️ This is a BACKUP Discord listener - use only when WebSocket fails!');
+    console.log('💡 For normal operation, use: npm run start-websocket');
   });
 
   client.on(Events.MessageCreate, async (message) => {

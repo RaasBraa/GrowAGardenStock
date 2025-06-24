@@ -9,6 +9,10 @@ const expo = new Expo();
 const RATE_LIMIT_DELAY = 1000; // 1 second between batches
 const TOKEN_EXPIRY_DAYS = 30; // Remove tokens not used in 30 days
 const MAX_RETRIES = 3;
+const DUPLICATE_PREVENTION_WINDOW = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Track recent notifications to prevent duplicates
+const recentNotifications = new Map<string, number>();
 
 interface PushTokenEntry {
   token: string;
@@ -174,7 +178,36 @@ function getTokensForWeather(tokens: PushTokenEntry[]): PushTokenEntry[] {
   });
 }
 
+// Helper function to prevent duplicate notifications
+function isDuplicateNotification(itemName: string, quantity: number): boolean {
+  const notificationKey = `${itemName}-${quantity}`;
+  const now = Date.now();
+  const lastSent = recentNotifications.get(notificationKey);
+  
+  if (lastSent && (now - lastSent) < DUPLICATE_PREVENTION_WINDOW) {
+    return true; // This is a duplicate
+  }
+  
+  // Record this notification
+  recentNotifications.set(notificationKey, now);
+  
+  // Clean up old entries to prevent memory leaks
+  for (const [key, timestamp] of recentNotifications.entries()) {
+    if (now - timestamp > DUPLICATE_PREVENTION_WINDOW) {
+      recentNotifications.delete(key);
+    }
+  }
+  
+  return false; // This is not a duplicate
+}
+
 export async function sendItemNotification(itemName: string, quantity: number, category: string) {
+  // Check for duplicate notifications first
+  if (isDuplicateNotification(itemName, quantity)) {
+    console.log(`🚫 Skipping duplicate notification for ${itemName} (${quantity}) - sent within last 5 minutes`);
+    return;
+  }
+  
   // Clean up expired tokens first
   cleanupExpiredTokens();
   

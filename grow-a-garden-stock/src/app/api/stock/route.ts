@@ -14,6 +14,7 @@ interface TransformedStockData {
   gear: StockCategory;
   eggs: StockCategory;
   cosmetics: StockCategory;
+  events?: StockCategory;
   weather?: unknown;
   lastUpdated: string;
 }
@@ -22,6 +23,7 @@ export async function GET() {
   const stockFilePath = path.resolve(process.cwd(), 'stock-data.json');
 
   try {
+    // Simply read and serve the data from the WebSocket
     if (fs.existsSync(stockFilePath)) {
       const fileContents = fs.readFileSync(stockFilePath, 'utf-8');
       const data = JSON.parse(fileContents);
@@ -40,7 +42,8 @@ export async function GET() {
           seeds: 5,
           gear: 5,
           eggs: 30,
-          cosmetics: 240
+          cosmetics: 240,
+          events: 5
         };
         
         if (data[category]) {
@@ -116,7 +119,8 @@ export async function GET() {
         seeds: 5,
         gear: 5,
         eggs: 30,
-        cosmetics: 240
+        cosmetics: 240,
+        events: 5
       };
       
       return NextResponse.json({ 
