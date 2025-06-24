@@ -85,10 +85,8 @@ interface TransformedStockData {
     refreshIntervalMinutes: number;
   };
   weather?: {
-    id: string;
-    name: string;
-    startTime: string;
-    endTime: string;
+    current: string;
+    endsAt: string;
   };
   lastUpdated: string;
 }
@@ -239,11 +237,12 @@ class JStudioWebSocketListener {
       if (stockData.weather && stockData.weather.length > 0) {
         const activeWeather = stockData.weather.find(w => w && w.active);
         if (activeWeather) {
+          // Format weather name for display (convert "NightEvent" to "Night Event")
+          const displayName = activeWeather.weather_name.replace(/([A-Z])/g, ' $1').trim();
+          
           existingData.weather = {
-            id: activeWeather.weather_id,
-            name: activeWeather.weather_name,
-            startTime: new Date(activeWeather.start_duration_unix * 1000).toISOString(),
-            endTime: new Date(activeWeather.end_duration_unix * 1000).toISOString()
+            current: displayName,
+            endsAt: new Date(activeWeather.end_duration_unix * 1000).toISOString()
           };
         }
       }
@@ -258,7 +257,7 @@ class JStudioWebSocketListener {
       console.log(`   Gear: ${(stockData.gear_stock || []).length} items`);
       console.log(`   Eggs: ${(stockData.egg_stock || []).length} items`);
       console.log(`   Cosmetics: ${(stockData.cosmetic_stock || []).length} items`);
-      console.log(`   Weather: ${existingData.weather ? existingData.weather.name : 'None active'}`);
+      console.log(`   Weather: ${existingData.weather ? existingData.weather.current : 'None active'}`);
       
     } catch (error) {
       console.error('Error processing WebSocket stock update:', error);
