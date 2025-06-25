@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import WebSocket from 'ws';
+import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications';
 
 interface WebSocketStockData {
   seed_stock: Array<{
@@ -181,6 +182,7 @@ class JStudioWebSocketListener {
       const now = new Date().toISOString();
       
       // Update only the categories that are present in this WebSocket message
+      let notificationCount = 0;
       if (stockData.seed_stock && stockData.seed_stock.length >= 0) {
         existingData.seeds = {
           items: stockData.seed_stock.map(item => ({
@@ -192,6 +194,11 @@ class JStudioWebSocketListener {
           nextUpdate: this.calculateNextUpdate(5),
           refreshIntervalMinutes: 5
         };
+        // Send notifications for each seed item
+        for (const item of stockData.seed_stock) {
+          await sendItemNotification(item.display_name, item.quantity, 'Seeds');
+          notificationCount++;
+        }
       }
       
       if (stockData.gear_stock && stockData.gear_stock.length >= 0) {
@@ -205,6 +212,10 @@ class JStudioWebSocketListener {
           nextUpdate: this.calculateNextUpdate(5),
           refreshIntervalMinutes: 5
         };
+        for (const item of stockData.gear_stock) {
+          await sendItemNotification(item.display_name, item.quantity, 'Gear');
+          notificationCount++;
+        }
       }
       
       if (stockData.egg_stock && stockData.egg_stock.length >= 0) {
@@ -218,6 +229,10 @@ class JStudioWebSocketListener {
           nextUpdate: this.calculateNextUpdate(30),
           refreshIntervalMinutes: 30
         };
+        for (const item of stockData.egg_stock) {
+          await sendItemNotification(item.display_name, item.quantity, 'Eggs');
+          notificationCount++;
+        }
       }
       
       if (stockData.cosmetic_stock && stockData.cosmetic_stock.length >= 0) {
@@ -231,6 +246,10 @@ class JStudioWebSocketListener {
           nextUpdate: this.calculateNextUpdate(240),
           refreshIntervalMinutes: 240
         };
+        for (const item of stockData.cosmetic_stock) {
+          await sendItemNotification(item.display_name, item.quantity, 'Cosmetics');
+          notificationCount++;
+        }
       }
 
       // Process weather data with safety checks
@@ -244,6 +263,9 @@ class JStudioWebSocketListener {
             current: displayName,
             endsAt: new Date(activeWeather.end_duration_unix * 1000).toISOString()
           };
+          // Send weather alert notification
+          await sendWeatherAlertNotification(displayName, `Ends: ${existingData.weather.endsAt}`);
+          notificationCount++;
         }
       }
       
@@ -258,6 +280,7 @@ class JStudioWebSocketListener {
       console.log(`   Eggs: ${(stockData.egg_stock || []).length} items`);
       console.log(`   Cosmetics: ${(stockData.cosmetic_stock || []).length} items`);
       console.log(`   Weather: ${existingData.weather ? existingData.weather.current : 'None active'}`);
+      console.log(`🔔 Processed ${notificationCount} push notifications for this update.`);
       
     } catch (error) {
       console.error('Error processing WebSocket stock update:', error);
