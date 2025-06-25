@@ -14,7 +14,7 @@ async function startWebSocket() {
     console.log('');
     console.log('✅ WebSocket listener started successfully!');
     console.log('📊 Real-time stock updates are now active');
-    console.log('🌐 API endpoint: http://localhost:3000/api/stock');
+    console.log('🌐 API endpoint: http://103.45.246.244:3000/api/stock');
     console.log('');
     console.log('💡 The WebSocket will automatically:');
     console.log('   • Connect to JStudio for real-time updates');
