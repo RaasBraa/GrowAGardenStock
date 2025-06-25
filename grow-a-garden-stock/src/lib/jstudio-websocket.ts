@@ -92,6 +92,17 @@ interface TransformedStockData {
   lastUpdated: string;
 }
 
+// --- Buffer for all shop and weather updates ---
+const updateBuffer: {
+  seeds?: Array<{ id: string; name: string; quantity: number }>;
+  gear?: Array<{ id: string; name: string; quantity: number }>;
+  eggs?: Array<{ id: string; name: string; quantity: number }>;
+  cosmetics?: Array<{ id: string; name: string; quantity: number }>;
+  weather?: { current: string; endsAt: string };
+  timeout?: NodeJS.Timeout;
+} = {};
+const BUFFER_TIMEOUT_MS = 2500; // 2.5 seconds
+
 class JStudioWebSocketListener {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
@@ -156,132 +167,133 @@ class JStudioWebSocketListener {
   private async processStockUpdate(stockData: WebSocketStockData) {
     try {
       console.log('Processing WebSocket stock update...');
-      
-      // Check if we have valid stock data
-      if (!stockData || typeof stockData !== 'object') {
-        console.log('Invalid stock data received, skipping update');
-        return;
-      }
-      
-      // Load existing data to merge with incremental updates
-      const stockFilePath = path.resolve(process.cwd(), 'stock-data.json');
-      let existingData: TransformedStockData;
-      
-      try {
-        if (fs.existsSync(stockFilePath)) {
-          existingData = JSON.parse(fs.readFileSync(stockFilePath, 'utf-8')) as TransformedStockData;
-        } else {
-          // Initialize with empty data structure
-          existingData = this.createEmptyStockData();
-        }
-             } catch {
-         console.log('Error reading existing stock data, creating new structure');
-         existingData = this.createEmptyStockData();
-       }
-      
-      const now = new Date().toISOString();
-      
-      // Update only the categories that are present in this WebSocket message
-      let notificationCount = 0;
+      // let notificationCount = 0; // Remove unused
+      // const now = new Date().toISOString(); // Remove unused
+      // Buffer seeds
       if (stockData.seed_stock && stockData.seed_stock.length >= 0) {
-        existingData.seeds = {
-          items: stockData.seed_stock.map(item => ({
-            id: item.item_id,
-            name: item.display_name,
-            quantity: item.quantity
-          })),
-          lastUpdated: now,
-          nextUpdate: this.calculateNextUpdate(5),
-          refreshIntervalMinutes: 5
-        };
-        // Send notifications for each seed item
-        for (const item of stockData.seed_stock) {
-          await sendItemNotification(item.display_name, item.quantity, 'Seeds');
-          notificationCount++;
-        }
+        updateBuffer.seeds = stockData.seed_stock.map(item => ({
+          id: item.item_id,
+          name: item.display_name,
+          quantity: item.quantity
+        }));
       }
-      
+      // Buffer gear
       if (stockData.gear_stock && stockData.gear_stock.length >= 0) {
-        existingData.gear = {
-          items: stockData.gear_stock.map(item => ({
-            id: item.item_id,
-            name: item.display_name,
-            quantity: item.quantity
-          })),
-          lastUpdated: now,
-          nextUpdate: this.calculateNextUpdate(5),
-          refreshIntervalMinutes: 5
-        };
-        for (const item of stockData.gear_stock) {
-          await sendItemNotification(item.display_name, item.quantity, 'Gear');
-          notificationCount++;
-        }
+        updateBuffer.gear = stockData.gear_stock.map(item => ({
+          id: item.item_id,
+          name: item.display_name,
+          quantity: item.quantity
+        }));
       }
-      
+      // Buffer eggs
       if (stockData.egg_stock && stockData.egg_stock.length >= 0) {
-        existingData.eggs = {
-          items: stockData.egg_stock.map(item => ({
-            id: item.item_id,
-            name: item.display_name,
-            quantity: item.quantity
-          })),
-          lastUpdated: now,
-          nextUpdate: this.calculateNextUpdate(30),
-          refreshIntervalMinutes: 30
-        };
-        for (const item of stockData.egg_stock) {
-          await sendItemNotification(item.display_name, item.quantity, 'Eggs');
-          notificationCount++;
-        }
+        updateBuffer.eggs = stockData.egg_stock.map(item => ({
+          id: item.item_id,
+          name: item.display_name,
+          quantity: item.quantity
+        }));
       }
-      
+      // Buffer cosmetics
       if (stockData.cosmetic_stock && stockData.cosmetic_stock.length >= 0) {
-        existingData.cosmetics = {
-          items: stockData.cosmetic_stock.map(item => ({
-            id: item.item_id,
-            name: item.display_name,
-            quantity: item.quantity
-          })),
-          lastUpdated: now,
-          nextUpdate: this.calculateNextUpdate(240),
-          refreshIntervalMinutes: 240
-        };
-        for (const item of stockData.cosmetic_stock) {
-          await sendItemNotification(item.display_name, item.quantity, 'Cosmetics');
-          notificationCount++;
-        }
+        updateBuffer.cosmetics = stockData.cosmetic_stock.map(item => ({
+          id: item.item_id,
+          name: item.display_name,
+          quantity: item.quantity
+        }));
       }
-
-      // Process weather data with safety checks
+      // Buffer weather
       if (stockData.weather && stockData.weather.length > 0) {
         const activeWeather = stockData.weather.find(w => w && w.active);
         if (activeWeather) {
-          // Format weather name for display (convert "NightEvent" to "Night Event")
           const displayName = activeWeather.weather_name.replace(/([A-Z])/g, ' $1').trim();
-          
-          existingData.weather = {
+          updateBuffer.weather = {
             current: displayName,
             endsAt: new Date(activeWeather.end_duration_unix * 1000).toISOString()
           };
-          // Send weather alert notification
-          await sendWeatherAlertNotification(displayName, `Ends: ${existingData.weather.endsAt}`);
-          notificationCount++;
         }
       }
-      
-      // Update the overall timestamp
-      existingData.lastUpdated = now;
-      
-      // Save the updated data
-      fs.writeFileSync(stockFilePath, JSON.stringify(existingData, null, 2));
-      console.log('✅ Stock data updated from WebSocket');
-      console.log(`   Seeds: ${(stockData.seed_stock || []).length} items`);
-      console.log(`   Gear: ${(stockData.gear_stock || []).length} items`);
-      console.log(`   Eggs: ${(stockData.egg_stock || []).length} items`);
-      console.log(`   Cosmetics: ${(stockData.cosmetic_stock || []).length} items`);
-      console.log(`   Weather: ${existingData.weather ? existingData.weather.current : 'None active'}`);
-      console.log(`🔔 Processed ${notificationCount} push notifications for this update.`);
-      
+      // Start or reset the buffer timeout
+      if (updateBuffer.timeout) clearTimeout(updateBuffer.timeout);
+      updateBuffer.timeout = setTimeout(() => {
+        const nowTimeout = new Date().toISOString();
+        const stockFilePath = path.resolve(process.cwd(), 'stock-data.json');
+        let existingData: TransformedStockData;
+        try {
+          if (fs.existsSync(stockFilePath)) {
+            existingData = JSON.parse(fs.readFileSync(stockFilePath, 'utf-8')) as TransformedStockData;
+          } else {
+            existingData = this.createEmptyStockData();
+          }
+        } catch {
+          existingData = this.createEmptyStockData();
+        }
+        let notificationCountTimeout = 0;
+        if (updateBuffer.seeds) {
+          existingData.seeds = {
+            items: updateBuffer.seeds,
+            lastUpdated: nowTimeout,
+            nextUpdate: this.calculateNextUpdate(5),
+            refreshIntervalMinutes: 5
+          };
+          for (const item of updateBuffer.seeds) {
+            void sendItemNotification(item.name, item.quantity, 'Seeds');
+            notificationCountTimeout++;
+          }
+        }
+        if (updateBuffer.gear) {
+          existingData.gear = {
+            items: updateBuffer.gear,
+            lastUpdated: nowTimeout,
+            nextUpdate: this.calculateNextUpdate(5),
+            refreshIntervalMinutes: 5
+          };
+          for (const item of updateBuffer.gear) {
+            void sendItemNotification(item.name, item.quantity, 'Gear');
+            notificationCountTimeout++;
+          }
+        }
+        if (updateBuffer.eggs) {
+          existingData.eggs = {
+            items: updateBuffer.eggs,
+            lastUpdated: nowTimeout,
+            nextUpdate: this.calculateNextUpdate(30),
+            refreshIntervalMinutes: 30
+          };
+          for (const item of updateBuffer.eggs) {
+            void sendItemNotification(item.name, item.quantity, 'Eggs');
+            notificationCountTimeout++;
+          }
+        }
+        if (updateBuffer.cosmetics) {
+          existingData.cosmetics = {
+            items: updateBuffer.cosmetics,
+            lastUpdated: nowTimeout,
+            nextUpdate: this.calculateNextUpdate(240),
+            refreshIntervalMinutes: 240
+          };
+          // Do NOT send notifications for cosmetics
+          // for (const item of updateBuffer.cosmetics) {
+          //   void sendItemNotification(item.name, item.quantity, 'Cosmetics');
+          //   notificationCountTimeout++;
+          // }
+        }
+        if (updateBuffer.weather) {
+          existingData.weather = updateBuffer.weather;
+          void sendWeatherAlertNotification(updateBuffer.weather.current, `Ends: ${updateBuffer.weather.endsAt}`);
+          notificationCountTimeout++;
+        }
+        existingData.lastUpdated = nowTimeout;
+        fs.writeFileSync(stockFilePath, JSON.stringify(existingData, null, 2));
+        // Clear buffer
+        updateBuffer.seeds = undefined;
+        updateBuffer.gear = undefined;
+        updateBuffer.eggs = undefined;
+        updateBuffer.cosmetics = undefined;
+        updateBuffer.weather = undefined;
+        updateBuffer.timeout = undefined;
+        console.log('✅ Stock data updated from WebSocket (buffer flush for all categories)');
+        console.log(`🔔 Processed ${notificationCountTimeout} push notifications for this buffer update.`);
+      }, BUFFER_TIMEOUT_MS);
     } catch (error) {
       console.error('Error processing WebSocket stock update:', error);
     }
