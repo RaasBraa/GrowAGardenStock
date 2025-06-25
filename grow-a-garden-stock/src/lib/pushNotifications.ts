@@ -9,7 +9,7 @@ const expo = new Expo();
 const RATE_LIMIT_DELAY = 1000; // 1 second between batches
 const TOKEN_EXPIRY_DAYS = 30; // Remove tokens not used in 30 days
 const MAX_RETRIES = 3;
-const DUPLICATE_PREVENTION_WINDOW = 5 * 60 * 1000; // 5 minutes in milliseconds
+const DUPLICATE_PREVENTION_WINDOW = 90 * 1000; // 1 minute 30 seconds in milliseconds
 
 // Track recent notifications to prevent duplicates
 const recentNotifications = new Map<string, number>();
@@ -204,7 +204,7 @@ function isDuplicateNotification(itemName: string, quantity: number): boolean {
 export async function sendItemNotification(itemName: string, quantity: number, category: string) {
   // Check for duplicate notifications first
   if (isDuplicateNotification(itemName, quantity)) {
-    console.log(`🚫 Skipping duplicate notification for ${itemName} (${quantity}) - sent within last 5 minutes`);
+    console.log(`🚫 Skipping duplicate notification for ${itemName} (${quantity}) - sent within last 1.5 minutes`);
     return;
   }
   
