@@ -111,7 +111,7 @@ class JStudioWebSocketListener {
   private isConnected = false;
   private userId: string;
 
-  constructor(userId: string = process.env.JSTUDIO_USER_ID || 'growagardenstock_bot') {
+  constructor(userId: string = process.env.JSTUDIO_USER_ID || '.gamer01') {
     this.userId = userId;
   }
 
