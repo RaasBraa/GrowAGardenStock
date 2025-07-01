@@ -2,6 +2,7 @@
   "name": "grow-a-garden-stock",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,7 +10,13 @@
     "lint": "next lint",
     "start-websocket": "ts-node start-websocket.ts",
     "start-discord-backup": "node discord-backup.js",
-    "status": "node check-status.js"
+    "start-discord-primary": "ts-node start-discord-primary.ts",
+    "start-stock-manager": "node --loader ts-node/esm start-stock-manager.ts",
+    "setup-discord": "node setup-discord-channels.js",
+    "start-combined": "ts-node start-combined.ts",
+    "monitor-services": "node monitor-services.js",
+    "status": "node check-status.js",
+    "log-discord": "ts-node log-discord-messages.ts"
   },
   "dependencies": {
     "@types/ws": "^8.18.1",
@@ -32,6 +39,7 @@
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5"
   }
 }

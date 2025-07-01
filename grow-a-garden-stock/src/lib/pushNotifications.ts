@@ -6,13 +6,19 @@ const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');
 const expo = new Expo();
 
 // Configuration constants
-const RATE_LIMIT_DELAY = 1000; // 1 second between batches
+const RATE_LIMIT_DELAY = 100; // 100ms between batches (was 1000ms)
 const TOKEN_EXPIRY_DAYS = 30; // Remove tokens not used in 30 days
 const MAX_RETRIES = 3;
-const DUPLICATE_PREVENTION_WINDOW = 90 * 1000; // 1 minute 30 seconds in milliseconds
+const TOKEN_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+const TOKEN_FAILURE_THRESHOLD = 5; // Number of failures before marking token as inactive
 
-// Track recent notifications to prevent duplicates
-const recentNotifications = new Map<string, number>();
+// Token cache for performance
+interface TokenCache {
+  tokens: PushTokenEntry[];
+  timestamp: number;
+}
+
+let tokenCache: TokenCache | null = null;
 
 interface PushTokenEntry {
   token: string;
@@ -22,6 +28,8 @@ interface PushTokenEntry {
   device_type?: 'ios' | 'android';
   app_version?: string;
   preferences?: { [itemName: string]: boolean };
+  failure_count?: number; // Track consecutive failures
+  last_failure?: string; // Track when last failure occurred
 }
 
 interface NotificationData {
@@ -63,19 +71,38 @@ const categoryAssets = {
   'Default': { emoji: '🛒', title: 'Item in Stock!' }
 }
 
+// Optimized token loading with caching
 function loadTokens(): PushTokenEntry[] {
-  if (!fs.existsSync(TOKENS_PATH)) return [];
+  const now = Date.now();
+  
+  // Return cached tokens if still valid
+  if (tokenCache && (now - tokenCache.timestamp) < TOKEN_CACHE_DURATION) {
+    return tokenCache.tokens;
+  }
+  
+  // Load from file
+  if (!fs.existsSync(TOKENS_PATH)) {
+    tokenCache = { tokens: [], timestamp: now };
+    return [];
+  }
+  
   try {
-    return JSON.parse(fs.readFileSync(TOKENS_PATH, 'utf-8')) as PushTokenEntry[];
+    const tokens = JSON.parse(fs.readFileSync(TOKENS_PATH, 'utf-8')) as PushTokenEntry[];
+    tokenCache = { tokens, timestamp: now };
+    return tokens;
   } catch (error) {
     console.error('Error loading tokens:', error);
+    tokenCache = { tokens: [], timestamp: now };
     return [];
   }
 }
 
+// Optimized token saving with cache invalidation
 function saveTokens(tokens: PushTokenEntry[]) {
   try {
     fs.writeFileSync(TOKENS_PATH, JSON.stringify(tokens, null, 2));
+    // Invalidate cache
+    tokenCache = null;
   } catch (error) {
     console.error('Error saving tokens:', error);
   }
@@ -88,7 +115,16 @@ function cleanupExpiredTokens(): void {
   
   const validTokens = tokens.filter(t => {
     const lastUsed = new Date(t.last_used);
-    return lastUsed > expiryDate && t.is_active;
+    const isExpired = lastUsed < expiryDate;
+    
+    // Remove tokens that are expired and inactive
+    if (isExpired && !t.is_active) {
+      console.log(`🗑️ Removing expired inactive token: ${t.token.substring(0, 20)}...`);
+      return false;
+    }
+    
+    // Keep tokens that are either active or not expired
+    return lastUsed > expiryDate || t.is_active;
   });
   
   if (validTokens.length !== tokens.length) {
@@ -97,27 +133,56 @@ function cleanupExpiredTokens(): void {
   }
 }
 
+// Optimized token update without full file rewrite
 function updateTokenLastUsed(token: string): void {
-  const tokens = loadTokens();
-  const tokenEntry = tokens.find(t => t.token === token);
+  if (!tokenCache) return;
+  
+  const tokenEntry = tokenCache.tokens.find(t => t.token === token);
   if (tokenEntry) {
     tokenEntry.last_used = new Date().toISOString();
-    saveTokens(tokens);
+    // Reset failure count on successful delivery
+    tokenEntry.failure_count = 0;
+    tokenEntry.last_failure = undefined;
   }
 }
 
 function handleReceiptError(receipt: ExpoPushReceipt, token: string): void {
   if (receipt.status === 'error') {
-    if (receipt.details?.error === 'DeviceNotRegistered') {
-      console.log(`📱 Device not registered, removing token: ${token.substring(0, 20)}...`);
-    } else if (receipt.details?.error === 'MessageTooBig') {
-      console.error(`📏 Message too big for token: ${token.substring(0, 20)}...`);
-    } else if (receipt.details?.error === 'MessageRateExceeded') {
-      console.warn(`⚡ Rate limit exceeded for token: ${token.substring(0, 20)}...`);
-    } else if (receipt.details?.error === 'InvalidCredentials') {
-      console.error(`🔐 Invalid credentials for token: ${token.substring(0, 20)}...`);
-    } else {
-      console.error(`❌ Push notification error for token ${token.substring(0, 20)}...:`, receipt.details);
+    const tokens = loadTokens();
+    const tokenEntry = tokens.find(t => t.token === token);
+    
+    if (tokenEntry) {
+      // Initialize failure tracking if not exists
+      if (tokenEntry.failure_count === undefined) {
+        tokenEntry.failure_count = 0;
+      }
+      
+      tokenEntry.failure_count++;
+      tokenEntry.last_failure = new Date().toISOString();
+      
+      if (receipt.details?.error === 'DeviceNotRegistered') {
+        console.log(`📱 Device not registered, marking token as inactive: ${token.substring(0, 20)}...`);
+        tokenEntry.is_active = false;
+      } else if (receipt.details?.error === 'MessageTooBig') {
+        console.error(`📏 Message too big for token: ${token.substring(0, 20)}...`);
+      } else if (receipt.details?.error === 'MessageRateExceeded') {
+        console.warn(`⚡ Rate limit exceeded for token: ${token.substring(0, 20)}... - will retry later`);
+        // Don't increment failure count for rate limiting
+        tokenEntry.failure_count--;
+      } else if (receipt.details?.error === 'InvalidCredentials') {
+        console.error(`🔐 Invalid credentials for token: ${token.substring(0, 20)}...`);
+        tokenEntry.is_active = false;
+      } else {
+        console.error(`❌ Push notification error for token ${token.substring(0, 20)}...:`, receipt.details);
+      }
+      
+      // Mark token as inactive if too many consecutive failures
+      if (tokenEntry.failure_count >= TOKEN_FAILURE_THRESHOLD) {
+        console.log(`🚫 Token ${token.substring(0, 20)}... marked inactive after ${TOKEN_FAILURE_THRESHOLD} failures`);
+        tokenEntry.is_active = false;
+      }
+      
+      saveTokens(tokens);
     }
   }
 }
@@ -178,38 +243,9 @@ function getTokensForWeather(tokens: PushTokenEntry[]): PushTokenEntry[] {
   });
 }
 
-// Helper function to prevent duplicate notifications
-function isDuplicateNotification(itemName: string, quantity: number): boolean {
-  const notificationKey = `${itemName}-${quantity}`;
-  const now = Date.now();
-  const lastSent = recentNotifications.get(notificationKey);
-  
-  if (lastSent && (now - lastSent) < DUPLICATE_PREVENTION_WINDOW) {
-    return true; // This is a duplicate
-  }
-  
-  // Record this notification
-  recentNotifications.set(notificationKey, now);
-  
-  // Clean up old entries to prevent memory leaks
-  for (const [key, timestamp] of recentNotifications.entries()) {
-    if (now - timestamp > DUPLICATE_PREVENTION_WINDOW) {
-      recentNotifications.delete(key);
-    }
-  }
-  
-  return false; // This is not a duplicate
-}
-
 export async function sendItemNotification(itemName: string, quantity: number, category: string) {
-  // Check for duplicate notifications first
-  if (isDuplicateNotification(itemName, quantity)) {
-    console.log(`🚫 Skipping duplicate notification for ${itemName} (${quantity}) - sent within last 1.5 minutes`);
-    return;
-  }
-  
-  // Clean up expired tokens first
-  cleanupExpiredTokens();
+  // Always send notifications for stock updates (removed duplicate check)
+  // scheduleCleanup();
   
   const allTokens = loadTokens().filter(t => t.is_active);
   const interestedTokens = getTokensForItem(allTokens, itemName);
@@ -242,29 +278,26 @@ export async function sendItemNotification(itemName: string, quantity: number, c
     badge: 1,
   }));
 
+  // Use larger batch size for better performance
   const chunks = expo.chunkPushNotifications(messages);
   const allFailedTokens: string[] = [];
 
   console.log(`📤 Sending ${itemName} notifications to ${interestedTokens.length} users in ${chunks.length} chunks...`);
 
+  // Process in batches for better performance
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     const { failedTokens } = await sendChunkWithRetry(chunk);
     allFailedTokens.push(...failedTokens);
     
-    // Add delay between chunks to respect rate limits
+    // Reduced delay between chunks for faster processing
     if (i < chunks.length - 1) {
       await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
     }
   }
 
-  // Remove failed tokens
-  if (allFailedTokens.length > 0) {
-    const allTokens = loadTokens();
-    const activeTokens = allTokens.filter(t => !allFailedTokens.includes(t.token));
-    saveTokens(activeTokens);
-    console.log(`🗑️ Removed ${allFailedTokens.length} failed tokens`);
-  }
+  // Note: Failed tokens are now handled by handleReceiptError function
+  // which tracks failures and marks tokens as inactive after threshold
 
   const successCount = messages.length - allFailedTokens.length;
   console.log(`✅ ${itemName} notification sent successfully to ${successCount}/${messages.length} devices`);

@@ -1,32 +1,43 @@
 import { NextResponse } from 'next/server';
-import { jstudioAPI } from '@/lib/jstudio-api';
+import { ALL_ITEMS } from '@/lib/pushNotifications';
 
 export async function GET() {
   try {
-    console.log('Fetching all available item information from JStudio API...');
-    const items = await jstudioAPI.getAllItemInfo();
+    console.log('Serving static available items list...');
     
-    // Remove icon URLs since the app has local images
-    const itemsWithoutIcons = items.map(item => ({
-      item_id: item.item_id,
-      display_name: item.display_name,
-      rarity: item.rarity,
-      currency: item.currency,
-      price: item.price,
-      description: item.description,
-      last_seen: item.last_seen,
-      duration: item.duration
-    }));
+    // Convert the ALL_ITEMS object to a flat array for the frontend
+    const allItemsArray = [
+      ...Object.values(ALL_ITEMS.seeds).map(name => ({ 
+        item_id: name.toLowerCase().replace(/\s+/g, '_'), 
+        display_name: name, 
+        category: 'seeds' 
+      })),
+      ...Object.values(ALL_ITEMS.gear).map(name => ({ 
+        item_id: name.toLowerCase().replace(/\s+/g, '_'), 
+        display_name: name, 
+        category: 'gear' 
+      })),
+      ...Object.values(ALL_ITEMS.eggs).map(name => ({ 
+        item_id: name.toLowerCase().replace(/\s+/g, '_'), 
+        display_name: name, 
+        category: 'eggs' 
+      })),
+      ...Object.values(ALL_ITEMS.weather).map(name => ({ 
+        item_id: name.toLowerCase().replace(/\s+/g, '_'), 
+        display_name: name, 
+        category: 'weather' 
+      }))
+    ];
     
     return NextResponse.json({
-      items: itemsWithoutIcons,
+      items: allItemsArray,
       lastUpdated: new Date().toISOString(),
-      source: 'JStudio API'
+      source: 'Static List (No API calls)'
     });
   } catch (error) {
-    console.error('Error fetching available items:', error);
+    console.error('Error serving available items:', error);
     return NextResponse.json({ 
-      error: 'Failed to fetch available items.',
+      error: 'Failed to serve available items.',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
