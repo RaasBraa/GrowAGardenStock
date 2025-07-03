@@ -40,6 +40,7 @@ export interface AllStockData {
   gear: StockCategory;
   eggs: StockCategory;
   cosmetics: StockCategory;
+  events: StockCategory;
   weather?: WeatherInfo;
   travellingMerchant?: {
     items: TravellingMerchantItem[];
@@ -69,7 +70,8 @@ class StockManager {
     seeds: 5,
     gear: 5,
     eggs: 30,
-    cosmetics: 240
+    cosmetics: 240,
+    events: 30
   };
   
   // Source priority and timing thresholds - much more reasonable
@@ -107,6 +109,7 @@ class StockManager {
       gear: data.gear || this.createEmptyCategory('gear'),
       eggs: data.eggs || this.createEmptyCategory('eggs'),
       cosmetics: data.cosmetics || this.createEmptyCategory('cosmetics'),
+      events: data.events || this.createEmptyCategory('events'),
       weather: data.weather,
       travellingMerchant: data.travellingMerchant
     };
@@ -129,7 +132,8 @@ class StockManager {
       seeds: this.createEmptyCategory('seeds'),
       gear: this.createEmptyCategory('gear'),
       eggs: this.createEmptyCategory('eggs'),
-      cosmetics: this.createEmptyCategory('cosmetics')
+      cosmetics: this.createEmptyCategory('cosmetics'),
+      events: this.createEmptyCategory('events')
     };
   }
 
@@ -190,7 +194,7 @@ class StockManager {
 
   public updateStockData(
     source: 'websocket' | 'cactus' | 'vulcan',
-    category: keyof Pick<AllStockData, 'seeds' | 'gear' | 'eggs' | 'cosmetics'>,
+    category: keyof Pick<AllStockData, 'seeds' | 'gear' | 'eggs' | 'cosmetics' | 'events'>,
     items: StockItem[],
     weather?: WeatherInfo,
     travellingMerchant?: TravellingMerchantItem[]
@@ -218,7 +222,7 @@ class StockManager {
     sourceInfo.lastSuccessfulUpdate = now;
     
     // Create data hash for comparison
-    const dataHash = this.createDataHash(category, items, weather, travellingMerchant);
+    const dataHash = this.createDataHash(category, items, weather);
     
     // Check if this is newer data than what we have
     if (!this.shouldUpdateData(source, category, dataHash)) {
@@ -270,7 +274,7 @@ class StockManager {
     this.saveStockData();
     
     // Send notifications (only for new/changed items)
-    this.sendNotifications(stockId, category, items, weather, travellingMerchant);
+    this.sendNotifications(stockId, category, items, weather);
     
     console.log(`✅ Updated stock data from ${source} for ${category}`);
   }
@@ -337,12 +341,11 @@ class StockManager {
     return true;
   }
 
-  private createDataHash(category: string, items: StockItem[], weather?: WeatherInfo, travellingMerchant?: TravellingMerchantItem[]): string {
+  private createDataHash(category: string, items: StockItem[], weather?: WeatherInfo): string {
     const data = {
       category,
       items: items.map(item => `${item.id}:${item.quantity}`).sort().join(','),
-      weather: weather ? `${weather.current}:${weather.endsAt}` : '',
-      travellingMerchant: travellingMerchant ? travellingMerchant.map(item => `${item.id}:${item.quantity}`).sort().join(',') : ''
+      weather: weather ? `${weather.current}:${weather.endsAt}` : ''
     };
     
     return JSON.stringify(data);
@@ -352,8 +355,7 @@ class StockManager {
     stockId: string,
     category: string,
     items: StockItem[],
-    weather?: WeatherInfo,
-    travellingMerchant?: TravellingMerchantItem[]
+    weather?: WeatherInfo
   ) {
     // Send weather notifications
     if (weather) {
@@ -361,21 +363,11 @@ class StockManager {
     }
     
     // Send item notifications (always send for all items)
-    if (category !== 'weather' && category !== 'travellingMerchant') {
+    if (category !== 'weather' && category !== 'travellingMerchant' && category !== 'cosmetics' && category !== 'events') {
       for (const item of items) {
         const shouldNotify = this.shouldNotifyForItem();
         if (shouldNotify) {
           await sendItemNotification(item.name, item.quantity, category);
-        }
-      }
-    }
-    
-    // Send travelling merchant notifications
-    if (travellingMerchant && travellingMerchant.length > 0) {
-      for (const item of travellingMerchant) {
-        const shouldNotify = this.shouldNotifyForItem();
-        if (shouldNotify) {
-          await sendItemNotification(item.name, item.quantity, 'Travelling Merchant');
         }
       }
     }

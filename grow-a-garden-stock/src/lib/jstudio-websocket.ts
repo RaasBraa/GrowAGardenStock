@@ -183,6 +183,16 @@ class JStudioWebSocketListener {
         stockManager.updateStockData('websocket', 'cosmetics', cosmetics);
       }
       
+      // Process events
+      if (stockData.eventshop_stock && stockData.eventshop_stock.length >= 0) {
+        const events: StockItem[] = stockData.eventshop_stock.map(item => ({
+          id: item.item_id,
+          name: item.display_name,
+          quantity: item.quantity
+        }));
+        stockManager.updateStockData('websocket', 'events', events);
+      }
+      
       // Process travelling merchant (separate from eventshop)
       if (stockData.travelingmerchant_stock && stockData.travelingmerchant_stock.length >= 0) {
         const travellingMerchant: TravellingMerchantItem[] = stockData.travelingmerchant_stock.map(item => ({

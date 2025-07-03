@@ -14,7 +14,12 @@ interface TransformedStockData {
   gear: StockCategory;
   eggs: StockCategory;
   cosmetics: StockCategory;
-  events?: StockCategory;
+  events: StockCategory;
+  travellingMerchant?: {
+    items: unknown[];
+    lastUpdated: string;
+    isActive: boolean;
+  };
   weather?: unknown;
   lastUpdated: string;
 }
@@ -34,8 +39,8 @@ export async function GET() {
       } as TransformedStockData;
       
       // Process each category
-      ['seeds', 'gear', 'eggs', 'cosmetics'].forEach(category => {
-        const categoryKey = category as keyof Pick<TransformedStockData, 'seeds' | 'gear' | 'eggs' | 'cosmetics'>;
+      ['seeds', 'gear', 'eggs', 'cosmetics', 'events'].forEach(category => {
+        const categoryKey = category as keyof Pick<TransformedStockData, 'seeds' | 'gear' | 'eggs' | 'cosmetics' | 'events'>;
         
         // Define refresh intervals in minutes for each category
         const refreshIntervals = {
@@ -43,7 +48,7 @@ export async function GET() {
           gear: 5,
           eggs: 30,
           cosmetics: 240,
-          events: 5
+          events: 30
         };
         
         if (data[category]) {
@@ -110,6 +115,11 @@ export async function GET() {
         transformedData.weather = data.weather;
       }
       
+      // Travelling merchant data
+      if (data.travellingMerchant) {
+        transformedData.travellingMerchant = data.travellingMerchant;
+      }
+      
       return NextResponse.json(transformedData);
     } else {
       // If the file doesn't exist yet, return an empty object with a timestamp.
@@ -120,7 +130,7 @@ export async function GET() {
         gear: 5,
         eggs: 30,
         cosmetics: 240,
-        events: 5
+        events: 30
       };
       
       return NextResponse.json({ 
@@ -167,6 +177,17 @@ export async function GET() {
             return new Date(nextScheduledMinute * 60 * 1000).toISOString();
           })(),
           refreshIntervalMinutes: refreshIntervals.cosmetics
+        },
+        events: { 
+          items: [], 
+          lastUpdated: currentTime,
+          nextUpdate: (() => {
+            const minutesSinceEpoch = Math.floor(new Date(currentTime).getTime() / (1000 * 60));
+            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervals.events);
+            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervals.events;
+            return new Date(nextScheduledMinute * 60 * 1000).toISOString();
+          })(),
+          refreshIntervalMinutes: refreshIntervals.events
         },
         lastUpdated: currentTime
       }, { status: 404 });
