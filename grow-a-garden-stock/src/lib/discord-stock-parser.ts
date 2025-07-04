@@ -118,8 +118,15 @@ function parseVulcanMessage(message: Message, category: 'seeds' | 'gear' | 'eggs
   const lines = itemsField.value.split('\n');
   
   for (const line of lines) {
-    // Vulcan format: "<:GreenApplee:1387913815789801652> **Green Apple** (1x)"
-    const match = line.match(/>\s*\*\*([^*]+)\*\*\s*\((\d+)x\)/i);
+    // Try multiple Vulcan formats:
+    // 1. With emoji: "<:GreenApplee:1387913815789801652> **Green Apple** (1x)"
+    // 2. Without emoji: "**Green Apple** (1x)"
+    let match = line.match(/>\s*\*\*([^*]+)\*\*\s*\((\d+)x\)/i);
+    if (!match) {
+      // Try format without emoji
+      match = line.match(/\*\*([^*]+)\*\*\s*\((\d+)x\)/i);
+    }
+    
     if (match) {
       const name = match[1].trim();
       const quantity = parseInt(match[2], 10);
