@@ -5,6 +5,7 @@ import { initializeDiscordListener as initializeCactusDiscord } from './discord-
 import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
 import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications.js';
 import { randomUUID } from 'crypto';
+import { broadcastStockUpdate } from '../app/api/stock-updates/route.js';
 
 // Stock data structure that matches your API format
 export interface StockItem {
@@ -275,6 +276,20 @@ class StockManager {
     
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather);
+    
+    // Broadcast update to connected SSE clients
+    try {
+      broadcastStockUpdate({
+        type: 'stock_update',
+        source,
+        category,
+        stockId,
+        data: this.stockData,
+        timestamp: now
+      });
+    } catch (error) {
+      console.error('Error broadcasting stock update:', error);
+    }
     
     console.log(`✅ Updated stock data from ${source} for ${category}`);
   }
