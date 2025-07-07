@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stockManager } from '../../../lib/stock-manager';
+import { getStockData } from '../../../lib/stock-manager-nextjs';
 
 // Store connected clients
 const clients = new Set<{
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       controller.enqueue(new TextEncoder().encode(initialMessage));
       
       // Send current stock data immediately
-      const currentStock = stockManager.getStockData();
+      const currentStock = getStockData();
       const stockMessage = `data: ${JSON.stringify({
         type: 'stock_update',
         data: currentStock,
