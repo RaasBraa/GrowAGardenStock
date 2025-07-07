@@ -2,6 +2,15 @@
 // This version only provides the interfaces and basic data access
 // without importing the full stock manager that requires ts-node
 
+export interface StockUpdateEvent {
+  type: 'stock_update';
+  source: 'websocket' | 'cactus' | 'vulcan';
+  category: string;
+  stockId: string;
+  data: AllStockData;
+  timestamp: string;
+}
+
 export interface StockItem {
   id: string;
   name: string;

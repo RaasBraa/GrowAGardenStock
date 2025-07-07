@@ -5,6 +5,7 @@ import { initializeDiscordListener as initializeCactusDiscord } from './discord-
 import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
 import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications.js';
 import { randomUUID } from 'crypto';
+import { stockEventEmitter } from './stock-events.js';
 
 // Stock data structure that matches your API format
 export interface StockItem {
@@ -232,6 +233,12 @@ class StockManager {
 
     console.log(`📥 Received ${source} update for ${category}:`, items.length, 'items');
     
+    // Validate that critical categories are not empty
+    if ((category === 'seeds' || category === 'gear' || category === 'eggs') && items.length === 0) {
+      console.log(`⚠️ Rejecting empty ${category} update from ${source} - shop should never be completely empty`);
+      return;
+    }
+    
     // Generate stock ID for this update
     const stockId = randomUUID();
     console.log(`🆔 Generated stock ID: ${stockId.substring(0, 8)}...`);
@@ -275,6 +282,19 @@ class StockManager {
     
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather);
+    
+    // Broadcast update to SSE clients
+    try {
+      stockEventEmitter.emit({
+        type: 'stock_update',
+        source,
+        category,
+        stockId,
+        timestamp: now
+      });
+    } catch (error) {
+      console.error('Error broadcasting stock update:', error);
+    }
     
     console.log(`✅ Updated stock data from ${source} for ${category}`);
   }

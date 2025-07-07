@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStockData } from '../../../lib/stock-manager-nextjs';
+import { stockEventEmitter, StockUpdateEvent } from '../../../lib/stock-events';
 
 // Store connected clients
 const clients = new Set<{
@@ -50,15 +50,19 @@ export async function GET(request: NextRequest) {
       
       controller.enqueue(new TextEncoder().encode(initialMessage));
       
-      // Send current stock data immediately
-      const currentStock = getStockData();
-      const stockMessage = `data: ${JSON.stringify({
-        type: 'stock_update',
-        data: currentStock,
-        timestamp: new Date().toISOString()
-      })}\n\n`;
+      // Listen for real-time updates
+      const updateListener = (updateData: StockUpdateEvent) => {
+        const message = `data: ${JSON.stringify(updateData)}\n\n`;
+        try {
+          controller.enqueue(new TextEncoder().encode(message));
+        } catch (error) {
+          console.error('Error sending SSE update:', error);
+          // Remove this listener if there's an error
+          stockEventEmitter.removeListener(updateListener);
+        }
+      };
       
-      controller.enqueue(new TextEncoder().encode(stockMessage));
+      stockEventEmitter.onUpdate(updateListener);
       
       // Handle client disconnect
       request.signal.addEventListener('abort', () => {
