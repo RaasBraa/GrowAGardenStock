@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { jstudioWebSocket } from './jstudio-websocket';
-import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener';
-import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan';
-import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications';
+import { jstudioWebSocket } from './jstudio-websocket.js';
+import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener.js';
+import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
+import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications.js';
 import { randomUUID } from 'crypto';
-import { broadcastStockUpdate } from '../app/api/stock-updates/route';
+import { broadcastStockUpdate } from '../app/api/stock-updates/route.js';
 
 // Stock data structure that matches your API format
 export interface StockItem {
