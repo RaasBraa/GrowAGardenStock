@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { stockManager, StockItem, WeatherInfo, TravellingMerchantItem } from './stock-manager.js';
+import { stockManager, StockItem, WeatherInfo, TravellingMerchantItem } from './stock-manager';
 
 interface WebSocketStockData {
   seed_stock: Array<{

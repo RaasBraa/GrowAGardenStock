@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stockManager } from '../../../lib/stock-manager.js';
+import { stockManager } from '../../../lib/stock-manager';
 
 // Store connected clients
 const clients = new Set<{
