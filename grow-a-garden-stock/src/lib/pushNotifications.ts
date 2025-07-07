@@ -51,7 +51,7 @@ export const ALL_ITEMS = {
   ],
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
-    "Godly Sprinkler", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray",
+    "Godly Sprinkler", "Tanning Mirror", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray",
     "Favorite Tool", "Harvest Tool", "Friendship Pot"
   ],
   eggs: [
