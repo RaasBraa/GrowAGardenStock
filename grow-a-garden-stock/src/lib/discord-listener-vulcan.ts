@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits, Events, Message } from 'discord.js';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { parseDiscordStockMessage, parseDiscordWeatherMessage } from './discord-stock-parser.js';
-import { stockManager, StockItem, WeatherInfo } from './stock-manager.js';
+import { parseDiscordStockMessage, parseDiscordWeatherMessage } from './discord-stock-parser';
+import { stockManager, StockItem, WeatherInfo } from './stock-manager';
 
 // Explicitly load .env.local from the project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
