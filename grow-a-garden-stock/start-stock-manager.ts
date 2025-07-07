@@ -1,4 +1,4 @@
-import { stockManager } from './src/lib/stock-manager';
+import { stockManager } from './src/lib/stock-manager.js';
 
 console.log('🚀 Starting Grow A Garden Stock - Multi-Source Stock Manager');
 console.log('📡 Coordinating WebSocket, Cactus Discord, and Vulcan Discord');
