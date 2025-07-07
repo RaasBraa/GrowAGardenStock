@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "start-websocket": "ts-node start-websocket.ts",
+    "start-websocket": "ts-node start-stock-manager.ts",
     "start-discord-backup": "node discord-backup.js",
     "start-discord-primary": "ts-node start-discord-primary.ts",
     "start-stock-manager": "node --loader ts-node/esm start-stock-manager.ts",
