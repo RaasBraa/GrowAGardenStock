@@ -52,16 +52,16 @@ interface WebSocketStockData {
     Date_End: string;
     icon?: string;
   }>;
-  travelingmerchant_stock: Array<{
-    item_id: string;
-    display_name: string;
-    quantity: number;
-    start_date_unix: number;
-    end_date_unix: number;
-    Date_Start: string;
-    Date_End: string;
-    icon?: string;
-  }>;
+  travelingmerchant_stock: {
+    merchantName: string;
+    stock: Array<{
+      item_id: string;
+      display_name: string;
+      quantity: number;
+      start_date_unix: number;
+      end_date_unix: number;
+    }>;
+  };
   weather: Array<{
     weather_id: string;
     end_duration_unix: number;
@@ -194,15 +194,16 @@ class JStudioWebSocketListener {
       }
       
       // Process travelling merchant (separate from eventshop)
-      if (stockData.travelingmerchant_stock && stockData.travelingmerchant_stock.length >= 0) {
-        const travellingMerchant: TravellingMerchantItem[] = stockData.travelingmerchant_stock.map(item => ({
+      if (stockData.travelingmerchant_stock && stockData.travelingmerchant_stock.stock && stockData.travelingmerchant_stock.stock.length >= 0) {
+        const travellingMerchant: TravellingMerchantItem[] = stockData.travelingmerchant_stock.stock.map(item => ({
           id: item.item_id,
           name: item.display_name,
           quantity: item.quantity
         }));
         console.log('🛒 Travelling Merchant items:', travellingMerchant);
+        console.log('👤 Merchant Name:', stockData.travelingmerchant_stock.merchantName);
         // Update travelling merchant data through stock manager
-        stockManager.updateStockData('websocket', 'seeds', [], undefined, travellingMerchant);
+        stockManager.updateStockData('websocket', 'seeds', [], undefined, travellingMerchant, stockData.travelingmerchant_stock.merchantName);
       }
       
       // Process weather

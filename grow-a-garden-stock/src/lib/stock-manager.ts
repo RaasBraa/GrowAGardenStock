@@ -25,6 +25,15 @@ export interface TravellingMerchantItem {
   name: string;
   quantity: number;
   price?: number;
+  start_date_unix?: number;
+  end_date_unix?: number;
+}
+
+export interface TravellingMerchantData {
+  merchantName: string;
+  items: TravellingMerchantItem[];
+  lastUpdated: string;
+  isActive: boolean;
 }
 
 export interface StockCategory {
@@ -43,11 +52,7 @@ export interface AllStockData {
   cosmetics: StockCategory;
   events: StockCategory;
   weather?: WeatherInfo;
-  travellingMerchant?: {
-    items: TravellingMerchantItem[];
-    lastUpdated: string;
-    isActive: boolean;
-  };
+  travellingMerchant?: TravellingMerchantData;
 }
 
 // Source tracking with better timing
@@ -198,7 +203,8 @@ class StockManager {
     category: keyof Pick<AllStockData, 'seeds' | 'gear' | 'eggs' | 'cosmetics' | 'events'>,
     items: StockItem[],
     weather?: WeatherInfo,
-    travellingMerchant?: TravellingMerchantItem[]
+    travellingMerchant?: TravellingMerchantItem[],
+    merchantName?: string
   ) {
     const now = new Date().toISOString();
     const sourceInfo = this.sources.get(source);
@@ -268,6 +274,7 @@ class StockManager {
     
     if (travellingMerchant) {
       this.stockData.travellingMerchant = {
+        merchantName: merchantName || 'Unknown Merchant',
         items: travellingMerchant,
         lastUpdated: now,
         isActive: travellingMerchant.length > 0
@@ -310,6 +317,72 @@ class StockManager {
       }
     } catch (error) {
       console.error('Error triggering SSE broadcast:', error);
+    }
+
+    // Send SSE for weather updates if weather data changed
+    if (weather) {
+      try {
+        console.log(`📡 Triggering SSE broadcast for weather from ${source}`);
+        
+        const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
+        const response = await fetch(`${serverUrl}/api/trigger-sse`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: process.env.SSE_SECRET_TOKEN,
+            type: 'weather_update',
+            source,
+            category: 'weather',
+            stockId: randomUUID(),
+            timestamp: now,
+            weather: weather
+          })
+        });
+
+        if (response.ok) {
+          await response.json();
+          console.log(`✅ SSE broadcast triggered successfully for weather`);
+        } else {
+          console.error(`❌ SSE broadcast failed for weather:`, response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('Error triggering weather SSE broadcast:', error);
+      }
+    }
+
+    // Send SSE for travelling merchant updates if merchant data changed
+    if (travellingMerchant) {
+      try {
+        console.log(`📡 Triggering SSE broadcast for travelling merchant from ${source}`);
+        
+        const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
+        const response = await fetch(`${serverUrl}/api/trigger-sse`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: process.env.SSE_SECRET_TOKEN,
+            type: 'travelling_merchant_update',
+            source,
+            category: 'travellingMerchant',
+            stockId: randomUUID(),
+            timestamp: now,
+            merchant: {
+              merchantName: merchantName || 'Unknown Merchant',
+              items: travellingMerchant,
+              isActive: travellingMerchant.length > 0
+            }
+          })
+        });
+
+        if (response.ok) {
+          await response.json();
+          console.log(`✅ SSE broadcast triggered successfully for travelling merchant`);
+        } else {
+          console.error(`❌ SSE broadcast failed for travelling merchant:`, response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('Error triggering travelling merchant SSE broadcast:', error);
+      }
     }
     
     console.log(`✅ Updated stock data from ${source} for ${category}`);
