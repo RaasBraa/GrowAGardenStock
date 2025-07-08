@@ -1,32 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stockEventEmitter, StockUpdateEvent } from '../../../lib/stock-events';
-
-// Store connected clients
-const clients = new Set<{
-  id: string;
-  response: Response;
-  controller: ReadableStreamDefaultController;
-}>();
-
-// Generate unique client ID
-function generateClientId(): string {
-  return `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-// Send message to all connected clients
-export function broadcastStockUpdate(data: Record<string, unknown>) {
-  const message = `data: ${JSON.stringify(data)}\n\n`;
-  
-  clients.forEach(client => {
-    try {
-      client.controller.enqueue(new TextEncoder().encode(message));
-    } catch (error) {
-      console.error('Error sending message to client:', error);
-      // Remove disconnected client
-      clients.delete(client);
-    }
-  });
-}
+import { clients, broadcastStockUpdate, generateClientId } from '../../../lib/sse-shared';
 
 export async function GET(request: NextRequest) {
   const clientId = generateClientId();

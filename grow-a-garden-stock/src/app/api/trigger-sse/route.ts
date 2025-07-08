@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { broadcastStockUpdate } from '../stock-updates/route';
+import { broadcastStockUpdate } from '../../../lib/sse-shared';
 
 const SSE_SECRET_TOKEN = process.env.SSE_SECRET_TOKEN || 'grow-garden-sse-secret-2024';
 
