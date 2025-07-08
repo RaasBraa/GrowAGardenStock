@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { token, type, source, category, stockId, timestamp, weather, merchant } = body;
+    const { token, type, source, category, stockId, timestamp } = body;
 
     // Validate secret token
     if (token !== SSE_SECRET_TOKEN) {
@@ -26,15 +26,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Create the SSE event data based on type
+    // Create the SSE event data
     const eventData = {
       type,
       source,
       category,
       stockId,
-      timestamp,
-      ...(type === 'weather_update' && weather ? { weather } : {}),
-      ...(type === 'travelling_merchant_update' && merchant ? { merchant } : {})
+      timestamp
     };
 
     console.log(`📡 Triggering SSE broadcast for ${category} from ${source}`);

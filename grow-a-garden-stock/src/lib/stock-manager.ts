@@ -334,8 +334,7 @@ class StockManager {
             source,
             category: 'weather',
             stockId: randomUUID(),
-            timestamp: now,
-            weather: weather
+            timestamp: now
           })
         });
 
@@ -365,12 +364,7 @@ class StockManager {
             source,
             category: 'travellingMerchant',
             stockId: randomUUID(),
-            timestamp: now,
-            merchant: {
-              merchantName: merchantName || 'Unknown Merchant',
-              items: travellingMerchant,
-              isActive: travellingMerchant.length > 0
-            }
+            timestamp: now
           })
         });
 
