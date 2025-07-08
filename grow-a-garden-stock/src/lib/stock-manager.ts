@@ -5,7 +5,7 @@ import { initializeDiscordListener as initializeCactusDiscord } from './discord-
 import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
 import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications.js';
 import { randomUUID } from 'crypto';
-import { stockEventEmitter } from './stock-events.js';
+
 
 // Stock data structure that matches your API format
 export interface StockItem {
@@ -193,7 +193,7 @@ class StockManager {
     console.log('🔍 Data validation and source prioritization enabled');
   }
 
-  public updateStockData(
+  public async updateStockData(
     source: 'websocket' | 'cactus' | 'vulcan',
     category: keyof Pick<AllStockData, 'seeds' | 'gear' | 'eggs' | 'cosmetics' | 'events'>,
     items: StockItem[],
@@ -283,19 +283,31 @@ class StockManager {
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather);
     
-    // Broadcast update to SSE clients
+    // Broadcast update to SSE clients via HTTP POST
     try {
-      console.log(`📡 Broadcasting SSE event for ${category} from ${source}`);
-      stockEventEmitter.emit({
-        type: 'stock_update',
-        source,
-        category,
-        stockId,
-        timestamp: now
+      console.log(`📡 Triggering SSE broadcast for ${category} from ${source}`);
+      
+      const response = await fetch('http://localhost:3000/api/trigger-sse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: process.env.SSE_SECRET_TOKEN || 'grow-garden-sse-secret-2024',
+          type: 'stock_update',
+          source,
+          category,
+          stockId,
+          timestamp: now
+        })
       });
-      console.log(`✅ SSE event broadcasted successfully for ${category}`);
+
+      if (response.ok) {
+        await response.json();
+        console.log(`✅ SSE broadcast triggered successfully for ${category}`);
+      } else {
+        console.error(`❌ SSE broadcast failed for ${category}:`, response.status, response.statusText);
+      }
     } catch (error) {
-      console.error('Error broadcasting stock update:', error);
+      console.error('Error triggering SSE broadcast:', error);
     }
     
     console.log(`✅ Updated stock data from ${source} for ${category}`);
