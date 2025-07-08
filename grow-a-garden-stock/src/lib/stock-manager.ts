@@ -287,7 +287,9 @@ class StockManager {
     try {
       console.log(`📡 Triggering SSE broadcast for ${category} from ${source}`);
       
-      const response = await fetch('http://localhost:3000/api/trigger-sse', {
+      // Use environment variable for server URL or default to the correct server
+      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
+      const response = await fetch(`${serverUrl}/api/trigger-sse`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
