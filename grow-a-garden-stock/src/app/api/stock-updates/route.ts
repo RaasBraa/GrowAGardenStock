@@ -52,9 +52,11 @@ export async function GET(request: NextRequest) {
       
       // Listen for real-time updates
       const updateListener = (updateData: StockUpdateEvent) => {
+        console.log(`📡 SSE route received update for ${updateData.category} from ${updateData.source}`);
         const message = `data: ${JSON.stringify(updateData)}\n\n`;
         try {
           controller.enqueue(new TextEncoder().encode(message));
+          console.log(`✅ SSE message sent to client ${clientId} for ${updateData.category}`);
         } catch (error) {
           console.error('Error sending SSE update:', error);
           // Remove this listener if there's an error

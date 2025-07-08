@@ -285,6 +285,7 @@ class StockManager {
     
     // Broadcast update to SSE clients
     try {
+      console.log(`📡 Broadcasting SSE event for ${category} from ${source}`);
       stockEventEmitter.emit({
         type: 'stock_update',
         source,
@@ -292,6 +293,7 @@ class StockManager {
         stockId,
         timestamp: now
       });
+      console.log(`✅ SSE event broadcasted successfully for ${category}`);
     } catch (error) {
       console.error('Error broadcasting stock update:', error);
     }
