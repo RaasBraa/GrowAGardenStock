@@ -3,7 +3,7 @@ import * as path from 'path';
 import { jstudioWebSocket } from './jstudio-websocket.js';
 import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener.js';
 import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
-import { sendItemNotification, sendWeatherAlertNotification } from './pushNotifications.js';
+import { sendItemNotification, sendWeatherAlertNotification, sendCategoryNotification } from './pushNotifications.js';
 import { randomUUID } from 'crypto';
 
 
@@ -465,14 +465,44 @@ class StockManager {
       await sendWeatherAlertNotification(weather.current, `Ends: ${weather.endsAt}`);
     }
     
-    // Send item notifications (always send for all items)
-    if (category !== 'weather' && category !== 'travellingMerchant' && category !== 'cosmetics' && category !== 'events') {
-      for (const item of items) {
-        const shouldNotify = this.shouldNotifyForItem();
-        if (shouldNotify) {
-          await sendItemNotification(item.name, item.quantity, category);
+    // Send notifications based on category type
+    switch (category) {
+      case 'seeds':
+      case 'gear':
+      case 'eggs':
+        // Per-item notifications for these categories
+        for (const item of items) {
+          const shouldNotify = this.shouldNotifyForItem();
+          if (shouldNotify) {
+            await sendItemNotification(item.name, item.quantity, category);
+          }
         }
-      }
+        break;
+        
+      case 'cosmetics':
+        // Category-level notification for cosmetics
+        if (items.length > 0) {
+          await sendCategoryNotification('Cosmetics', 'Cosmetics', 'New cosmetic items are available in the shop!');
+        }
+        break;
+        
+      case 'travellingMerchant':
+        // Category-level notification for travelling merchant
+        if (items.length > 0) {
+          await sendCategoryNotification('Travelling Merchant', 'Travelling Merchant', 'The travelling merchant has arrived with new items!');
+        }
+        break;
+        
+      case 'events':
+        // Category-level notification for events
+        if (items.length > 0) {
+          await sendCategoryNotification('Events', 'Events', 'New event items are available!');
+        }
+        break;
+        
+      default:
+        console.log(`⚠️ Unknown category for notifications: ${category}`);
+        break;
     }
   }
 

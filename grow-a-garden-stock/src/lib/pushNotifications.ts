@@ -36,7 +36,7 @@ interface NotificationData {
   itemName: string;
   rarity: string;
   quantity: number;
-  type: 'rare_item_alert' | 'stock_update' | 'weather_alert';
+  type: 'rare_item_alert' | 'stock_update' | 'weather_alert' | 'category_alert';
   timestamp: string;
   channel?: string;
   [key: string]: unknown; // Add index signature for compatibility
@@ -228,18 +228,27 @@ async function sendChunkWithRetry(chunk: ExpoPushMessage[], retryCount = 0): Pro
 // Helper function to get tokens interested in a specific item
 function getTokensForItem(tokens: PushTokenEntry[], itemName: string): PushTokenEntry[] {
   return tokens.filter(token => {
-    // If no preferences set, default to true (backward compatibility)
-    if (!token.preferences) return true;
+    // Only send notifications if user has explicitly enabled this item
+    if (!token.preferences) return false; // No preferences = no notifications
     return token.preferences[itemName] === true;
+  });
+}
+
+// Helper function to get tokens interested in category-level notifications
+function getTokensForCategory(tokens: PushTokenEntry[], categoryName: string): PushTokenEntry[] {
+  return tokens.filter(token => {
+    // Only send notifications if user has explicitly enabled this category
+    if (!token.preferences) return false; // No preferences = no notifications
+    return token.preferences[categoryName] === true;
   });
 }
 
 // Helper function to get tokens interested in weather notifications
 function getTokensForWeather(tokens: PushTokenEntry[]): PushTokenEntry[] {
   return tokens.filter(token => {
-    // If no preferences set, default to true (backward compatibility)
-    if (!token.preferences) return true;
-    return token.preferences["Weather Alerts"] === true;
+    // Only send notifications if user has explicitly enabled weather
+    if (!token.preferences) return false; // No preferences = no notifications
+    return token.preferences["Weather"] === true;
   });
 }
 
@@ -422,6 +431,65 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
 
   const successCount = messages.length - allFailedTokens.length;
   console.log(`✅ Weather alert sent successfully to ${successCount}/${messages.length} devices`);
+}
+
+export async function sendCategoryNotification(categoryName: string, categoryDisplayName: string, description: string) {
+  cleanupExpiredTokens();
+  
+  const allTokens = loadTokens().filter(t => t.is_active);
+  const interestedTokens = getTokensForCategory(allTokens, categoryName);
+  
+  if (interestedTokens.length === 0) {
+    console.log(`📭 No users have notifications enabled for ${categoryName}`);
+    return;
+  }
+
+  const notificationData: NotificationData = {
+    itemName: categoryDisplayName,
+    rarity: 'category',
+    quantity: 1,
+    type: 'category_alert',
+    timestamp: new Date().toISOString(),
+    channel: categoryName.toLowerCase()
+  };
+
+  const categoryAssets = {
+    'Cosmetics': { emoji: '✨', title: 'Cosmetics Available!' },
+    'Travelling Merchant': { emoji: '🛒', title: 'Travelling Merchant Arrived!' },
+    'Default': { emoji: '📢', title: 'New Items Available!' }
+  };
+
+  const assets = categoryAssets[categoryDisplayName as keyof typeof categoryAssets] || categoryAssets.Default;
+
+  const messages: ExpoPushMessage[] = interestedTokens.map(t => ({
+    to: t.token,
+    sound: 'default',
+    title: `${assets.emoji} ${assets.title}`,
+    body: description,
+    data: { ...notificationData },
+    priority: 'high',
+    channelId: 'category-alerts',
+    categoryId: 'category-alerts',
+    badge: 1,
+  }));
+
+  const chunks = expo.chunkPushNotifications(messages);
+  const allFailedTokens: string[] = [];
+
+  console.log(`📤 Sending ${categoryName} category notifications to ${interestedTokens.length} users in ${chunks.length} chunks...`);
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const { failedTokens } = await sendChunkWithRetry(chunk);
+    allFailedTokens.push(...failedTokens);
+    
+    if (i < chunks.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
+    }
+  }
+
+  const successCount = messages.length - allFailedTokens.length;
+  console.log(`✅ ${categoryName} category notification sent successfully to ${successCount}/${messages.length} devices`);
 }
 
 // Utility function to get token statistics

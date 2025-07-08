@@ -81,6 +81,7 @@ export async function GET() {
         // Mythical
         { id: "mythical_egg", name: "Mythical Egg", rarity: "Mythical", category: "eggs" },
         { id: "paradise_egg", name: "Paradise Egg", rarity: "Mythical", category: "eggs" },
+        { id: "bee_egg", name: "Bee Egg", rarity: "Mythical", category: "eggs" },
         // Divine
         { id: "bug_egg", name: "Bug Egg", rarity: "Divine", category: "eggs" }
       ],
