@@ -2,7 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stockEventEmitter, StockUpdateEvent } from '../../../lib/stock-events';
 import { clients, broadcastStockUpdate, generateClientId } from '../../../lib/sse-shared';
 
+const SSE_SECRET_TOKEN = process.env.SSE_SECRET_TOKEN;
+
 export async function GET(request: NextRequest) {
+  // Check if environment variable is set
+  if (!SSE_SECRET_TOKEN) {
+    console.error('❌ SSE_SECRET_TOKEN environment variable is not set');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+
+  // Get token from query parameter or header
+  const token = request.nextUrl.searchParams.get('token') || request.headers.get('x-sse-token');
+  
+  // Validate token
+  if (token !== SSE_SECRET_TOKEN) {
+    console.log('❌ Unauthorized SSE connection attempt');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const clientId = generateClientId();
   
   console.log(`📡 New SSE client connected: ${clientId}`);
@@ -54,7 +71,7 @@ export async function GET(request: NextRequest) {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
+      'Access-Control-Allow-Headers': 'Cache-Control, X-SSE-Token'
     }
   });
 }

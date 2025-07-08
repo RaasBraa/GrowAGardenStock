@@ -293,7 +293,7 @@ class StockManager {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: process.env.SSE_SECRET_TOKEN || 'grow-garden-sse-secret-2024',
+          token: process.env.SSE_SECRET_TOKEN,
           type: 'stock_update',
           source,
           category,

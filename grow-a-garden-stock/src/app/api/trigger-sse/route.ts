@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { broadcastStockUpdate } from '../../../lib/sse-shared';
 
-const SSE_SECRET_TOKEN = process.env.SSE_SECRET_TOKEN || 'grow-garden-sse-secret-2024';
+const SSE_SECRET_TOKEN = process.env.SSE_SECRET_TOKEN;
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if environment variable is set
+    if (!SSE_SECRET_TOKEN) {
+      console.error('❌ SSE_SECRET_TOKEN environment variable is not set');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const body = await request.json();
     const { token, type, source, category, stockId, timestamp } = body;
 
