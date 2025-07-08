@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { jstudioAPI } from '@/lib/jstudio-api';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     itemId: string;
-  };
+  }>;
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
-  const { itemId } = params;
+  const { itemId } = await params;
 
   if (!itemId) {
     return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });

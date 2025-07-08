@@ -57,9 +57,8 @@ export function parseDiscordStockMessage(message: Message, category: 'seeds' | '
   };
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// Reason: Linter false positive on used parameter 'category' in parseCactusMessage. This file is reviewed for real unused vars.
 // Parse Cactus format (components-based)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function parseCactusMessage(message: Message, category: 'seeds' | 'gear' | 'eggs' | 'cosmetics') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mainComponent = message.components[0] as any;
