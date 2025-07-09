@@ -175,8 +175,8 @@ class StockManager {
   public async start() {
     console.log('🚀 Starting Stock Manager with multi-source coordination...');
     
-    // Start WebSocket (primary source)
-    console.log('📡 Starting WebSocket listener...');
+    // Start JStudio WebSocket (primary source)
+    console.log('📡 Starting JStudio WebSocket listener...');
     await jstudioWebSocket.start();
     this.updateSourceStatus('websocket', true);
     
@@ -289,112 +289,6 @@ class StockManager {
     
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather);
-    
-    // Broadcast update to WebSocket clients via HTTP POST
-    try {
-      console.log(`🔌 Triggering WebSocket broadcast for ${category} from ${source}`);
-      
-      // Use environment variable for server URL or default to the correct server
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
-      const response = await fetch(`${serverUrl}/api/stock-updates-ws`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: process.env.SSE_SECRET_TOKEN,
-          type: 'stock_update',
-          source,
-          category,
-          stockId,
-          timestamp: now,
-          data: {
-            items: items.map(item => ({
-              id: item.id,
-              name: item.name,
-              quantity: item.quantity,
-              stockId: item.stockId
-            }))
-          }
-        })
-      });
-
-      if (response.ok) {
-        await response.json();
-        console.log(`✅ WebSocket broadcast triggered successfully for ${category}`);
-      } else {
-        console.error(`❌ WebSocket broadcast failed for ${category}:`, response.status, response.statusText);
-      }
-    } catch (error) {
-      console.error('Error triggering WebSocket broadcast:', error);
-    }
-
-    // Send WebSocket for weather updates if weather data changed
-    if (weather) {
-      try {
-        console.log(`🔌 Triggering WebSocket broadcast for weather from ${source}`);
-        
-        const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
-        const response = await fetch(`${serverUrl}/api/stock-updates-ws`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            token: process.env.SSE_SECRET_TOKEN,
-            type: 'weather_update',
-            source,
-            category: 'weather',
-            stockId: randomUUID(),
-            timestamp: now,
-            data: weather
-          })
-        });
-
-        if (response.ok) {
-          await response.json();
-          console.log(`✅ WebSocket broadcast triggered successfully for weather`);
-        } else {
-          console.error(`❌ WebSocket broadcast failed for weather:`, response.status, response.statusText);
-        }
-      } catch (error) {
-        console.error('Error triggering weather WebSocket broadcast:', error);
-      }
-    }
-
-    // Send WebSocket for travelling merchant updates if merchant data changed
-    if (travellingMerchant) {
-      try {
-        console.log(`🔌 Triggering WebSocket broadcast for travelling merchant from ${source}`);
-        
-        const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
-        const response = await fetch(`${serverUrl}/api/stock-updates-ws`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            token: process.env.SSE_SECRET_TOKEN,
-            type: 'travelling_merchant_update',
-            source,
-            category: 'travellingMerchant',
-            stockId: randomUUID(),
-            timestamp: now,
-            data: {
-              merchantName: merchantName || 'Unknown Merchant',
-              items: travellingMerchant.map(item => ({
-                id: item.id,
-                name: item.name,
-                quantity: item.quantity
-              }))
-            }
-          })
-        });
-
-        if (response.ok) {
-          await response.json();
-          console.log(`✅ WebSocket broadcast triggered successfully for travelling merchant`);
-        } else {
-          console.error(`❌ WebSocket broadcast failed for travelling merchant:`, response.status, response.statusText);
-        }
-      } catch (error) {
-        console.error('Error triggering travelling merchant WebSocket broadcast:', error);
-      }
-    }
     
     console.log(`✅ Updated stock data from ${source} for ${category}`);
   }

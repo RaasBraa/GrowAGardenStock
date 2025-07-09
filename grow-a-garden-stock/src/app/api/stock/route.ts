@@ -28,7 +28,7 @@ export async function GET() {
   const stockFilePath = path.resolve(process.cwd(), 'stock-data.json');
 
   try {
-    // Simply read and serve the data from the WebSocket
+    // Simply read and serve the data from the stock manager
     if (fs.existsSync(stockFilePath)) {
       const fileContents = fs.readFileSync(stockFilePath, 'utf-8');
       const data = JSON.parse(fileContents);

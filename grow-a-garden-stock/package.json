@@ -9,8 +9,6 @@
     "start": "next start",
     "lint": "next lint",
     "start-websocket": "ts-node start-stock-manager.ts",
-    "start-websocket-server": "tsx start-websocket-server.ts",
-    "test-websocket": "node test-websocket-connection.js",
     "start-discord-backup": "node discord-backup.js",
     "start-discord-primary": "ts-node start-discord-primary.ts",
     "start-stock-manager": "node --loader ts-node/esm start-stock-manager.ts",
@@ -21,15 +19,13 @@
     "log-discord": "ts-node log-discord-messages.ts"
   },
   "dependencies": {
-    "@types/ws": "^8.18.1",
     "discord.js": "^14.15.3",
     "dotenv": "^16.5.0",
     "expo-server-sdk": "^3.15.0",
     "next": "15.3.3",
     "node-fetch": "^3.3.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "ws": "^8.18.2"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

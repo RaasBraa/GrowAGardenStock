@@ -1,7 +1,7 @@
 import { stockManager } from './src/lib/stock-manager.js';
 
 console.log('🚀 Starting Grow A Garden Stock - Multi-Source Stock Manager');
-console.log('📡 Coordinating WebSocket, Cactus Discord, and Vulcan Discord');
+console.log('📡 Coordinating JStudio WebSocket, Cactus Discord, and Vulcan Discord');
 console.log('⚡ Smart source prioritization and data validation');
 console.log('');
 
@@ -17,7 +17,7 @@ async function startStockManager() {
     console.log('🌐 API endpoint: http://103.45.246.244:3000/api/stock');
     console.log('');
     console.log('💡 The Stock Manager will automatically:');
-    console.log('   • Prioritize WebSocket as primary source (99% uptime)');
+    console.log('   • Prioritize JStudio WebSocket as primary source (99% uptime)');
     console.log('   • Use Cactus Discord as backup 1 (faster updates)');
     console.log('   • Use Vulcan Discord as backup 2 (last resort)');
     console.log('   • Validate data consistency between sources');
