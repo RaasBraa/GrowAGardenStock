@@ -290,13 +290,13 @@ class StockManager {
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather);
     
-    // Broadcast update to SSE clients via HTTP POST
+    // Broadcast update to WebSocket clients via HTTP POST
     try {
-      console.log(`📡 Triggering SSE broadcast for ${category} from ${source}`);
+      console.log(`🔌 Triggering WebSocket broadcast for ${category} from ${source}`);
       
       // Use environment variable for server URL or default to the correct server
       const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
-      const response = await fetch(`${serverUrl}/api/trigger-sse`, {
+      const response = await fetch(`${serverUrl}/api/stock-updates-ws`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -305,27 +305,35 @@ class StockManager {
           source,
           category,
           stockId,
-          timestamp: now
+          timestamp: now,
+          data: {
+            items: items.map(item => ({
+              id: item.id,
+              name: item.name,
+              quantity: item.quantity,
+              stockId: item.stockId
+            }))
+          }
         })
       });
 
       if (response.ok) {
         await response.json();
-        console.log(`✅ SSE broadcast triggered successfully for ${category}`);
+        console.log(`✅ WebSocket broadcast triggered successfully for ${category}`);
       } else {
-        console.error(`❌ SSE broadcast failed for ${category}:`, response.status, response.statusText);
+        console.error(`❌ WebSocket broadcast failed for ${category}:`, response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Error triggering SSE broadcast:', error);
+      console.error('Error triggering WebSocket broadcast:', error);
     }
 
-    // Send SSE for weather updates if weather data changed
+    // Send WebSocket for weather updates if weather data changed
     if (weather) {
       try {
-        console.log(`📡 Triggering SSE broadcast for weather from ${source}`);
+        console.log(`🔌 Triggering WebSocket broadcast for weather from ${source}`);
         
         const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
-        const response = await fetch(`${serverUrl}/api/trigger-sse`, {
+        const response = await fetch(`${serverUrl}/api/stock-updates-ws`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -334,28 +342,29 @@ class StockManager {
             source,
             category: 'weather',
             stockId: randomUUID(),
-            timestamp: now
+            timestamp: now,
+            data: weather
           })
         });
 
         if (response.ok) {
           await response.json();
-          console.log(`✅ SSE broadcast triggered successfully for weather`);
+          console.log(`✅ WebSocket broadcast triggered successfully for weather`);
         } else {
-          console.error(`❌ SSE broadcast failed for weather:`, response.status, response.statusText);
+          console.error(`❌ WebSocket broadcast failed for weather:`, response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Error triggering weather SSE broadcast:', error);
+        console.error('Error triggering weather WebSocket broadcast:', error);
       }
     }
 
-    // Send SSE for travelling merchant updates if merchant data changed
+    // Send WebSocket for travelling merchant updates if merchant data changed
     if (travellingMerchant) {
       try {
-        console.log(`📡 Triggering SSE broadcast for travelling merchant from ${source}`);
+        console.log(`🔌 Triggering WebSocket broadcast for travelling merchant from ${source}`);
         
         const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://103.45.246.244:3000';
-        const response = await fetch(`${serverUrl}/api/trigger-sse`, {
+        const response = await fetch(`${serverUrl}/api/stock-updates-ws`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -364,18 +373,26 @@ class StockManager {
             source,
             category: 'travellingMerchant',
             stockId: randomUUID(),
-            timestamp: now
+            timestamp: now,
+            data: {
+              merchantName: merchantName || 'Unknown Merchant',
+              items: travellingMerchant.map(item => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity
+              }))
+            }
           })
         });
 
         if (response.ok) {
           await response.json();
-          console.log(`✅ SSE broadcast triggered successfully for travelling merchant`);
+          console.log(`✅ WebSocket broadcast triggered successfully for travelling merchant`);
         } else {
-          console.error(`❌ SSE broadcast failed for travelling merchant:`, response.status, response.statusText);
+          console.error(`❌ WebSocket broadcast failed for travelling merchant:`, response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Error triggering travelling merchant SSE broadcast:', error);
+        console.error('Error triggering travelling merchant WebSocket broadcast:', error);
       }
     }
     
