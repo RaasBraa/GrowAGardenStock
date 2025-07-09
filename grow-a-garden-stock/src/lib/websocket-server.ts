@@ -20,12 +20,12 @@ export function initializeWebSocketServer() {
   if (wss) return wss;
 
   // Create WebSocket server on port 8080
-  wss = new WebSocketServer({ port: 8080 });
+  wss = new WebSocketServer({ port: 8080, host: '103.45.246.244' });
 
   wss.on('connection', (ws, req) => {
     try {
       // Extract token from URL
-      const url = new URL(req.url || '', 'http://localhost');
+      const url = new URL(req.url || '', 'http://103.45.246.244:3000');
       const token = url.searchParams.get('token');
       
       // Validate token
@@ -115,7 +115,7 @@ export function initializeWebSocketServer() {
     });
   }, 30000);
 
-  console.log('🔌 WebSocket server started on port 8080');
+  console.log('🔌 WebSocket server started on 103.45.246.244:8080');
   return wss;
 }
 

@@ -17,9 +17,9 @@ export async function GET() {
   // Return connection info
   return NextResponse.json({
     message: 'WebSocket server is running',
-    endpoint: 'ws://localhost:8080',
+    endpoint: 'ws://103.45.246.244:8080',
     connectedClients: getClientCount(),
-    instructions: 'Connect to ws://localhost:8080?token=YOUR_TOKEN'
+    instructions: 'Connect to ws://103.45.246.244:8080?token=YOUR_TOKEN'
   });
 }
 
