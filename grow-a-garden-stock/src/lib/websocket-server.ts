@@ -19,8 +19,8 @@ let wss: WebSocketServer | null = null;
 export function initializeWebSocketServer() {
   if (wss) return wss;
 
-  // Create WebSocket server on port 8080
-  wss = new WebSocketServer({ port: 8080, host: '103.45.246.244' });
+  // Create WebSocket server on port 8080 - bind to all interfaces
+  wss = new WebSocketServer({ port: 8080 });
 
   wss.on('connection', (ws, req) => {
     try {
@@ -115,7 +115,7 @@ export function initializeWebSocketServer() {
     });
   }, 30000);
 
-  console.log('🔌 WebSocket server started on 103.45.246.244:8080');
+  console.log('🔌 WebSocket server started on port 8080 (all interfaces)');
   return wss;
 }
 
