@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeWebSocketServer, broadcastStockUpdate, getClientCount } from '../../../lib/websocket-server';
+import { broadcastStockUpdate, getClientCount } from '../../../lib/websocket-server';
 
 const SSE_SECRET_TOKEN = process.env.SSE_SECRET_TOKEN;
 
-// GET endpoint to handle WebSocket upgrade
+// GET endpoint to provide WebSocket connection info
 export async function GET() {
   // Check if environment variable is set
   if (!SSE_SECRET_TOKEN) {
@@ -11,15 +11,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
-  // Initialize WebSocket server
-  initializeWebSocketServer();
-
-  // Return connection info
+  // Return connection info (WebSocket server should be running independently)
   return NextResponse.json({
-    message: 'WebSocket server is running',
+    message: 'WebSocket server connection info',
     endpoint: 'ws://103.45.246.244:8080',
     connectedClients: getClientCount(),
-    instructions: 'Connect to ws://103.45.246.244:8080?token=YOUR_TOKEN'
+    instructions: 'Connect to ws://103.45.246.244:8080?token=YOUR_TOKEN',
+    note: 'Make sure the WebSocket server is running with: npm run start-websocket'
   });
 }
 
