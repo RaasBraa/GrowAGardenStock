@@ -303,17 +303,11 @@ class StockManager {
     const now = Date.now();
     
     // Special handling for weather updates - they should be treated as their own category
-    if (isWeatherUpdate && this.stockData.weather) {
-      // For weather updates, check against weather last update time instead of seeds
-      const weatherLastUpdated = this.stockData.weather.endsAt; // Use weather end time as reference
-      const currentTime = new Date(weatherLastUpdated).getTime();
-      const timeSinceLastUpdate = now - currentTime;
-      const minUpdateInterval = sourceConfig.minUpdateIntervalMinutes * 60 * 1000;
-      
-      // Check if enough time has passed since last weather update
-      if (timeSinceLastUpdate < minUpdateInterval) {
-        return false;
-      }
+    if (isWeatherUpdate) {
+      // For weather updates, always accept them regardless of timing
+      // Weather updates are important and should override timing restrictions
+      console.log(`🌤️ Accepting weather update from ${source} - weather updates bypass timing restrictions`);
+      return true;
     } else {
       // Normal category handling
       const currentCategory = this.stockData[category as keyof AllStockData];
@@ -358,6 +352,12 @@ class StockManager {
     // If this is the same data we already have, skip
     if (sourceInfo.lastDataHash === dataHash) {
       return false;
+    }
+    
+    // Special handling for weather updates - always accept new weather data
+    if (category === 'seeds' && dataHash.includes('weather')) {
+      console.log(`🌤️ Accepting new weather data from ${source} - weather data always updates`);
+      return true;
     }
     
     // Check if this source is more recent than our current data
