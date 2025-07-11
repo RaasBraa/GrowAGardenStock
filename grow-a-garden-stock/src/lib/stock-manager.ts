@@ -218,8 +218,11 @@ class StockManager {
     sourceInfo.lastMessageReceived = now;
     sourceInfo.isOnline = true;
 
+    // Check if this is a weather-only update (empty items array with weather data)
+    const isWeatherUpdate = items.length === 0 && weather !== undefined;
+    
     // Check if we should accept this update based on source priority
-    if (!this.shouldAcceptUpdate(source, category)) {
+    if (!this.shouldAcceptUpdate(source, category, isWeatherUpdate)) {
       console.log(`⏭️ Skipping ${source} update for ${category} - higher priority source has recent data`);
       return;
     }
@@ -293,23 +296,39 @@ class StockManager {
     console.log(`✅ Updated stock data from ${source} for ${category}`);
   }
 
-  private shouldAcceptUpdate(source: string, category: string): boolean {
+  private shouldAcceptUpdate(source: string, category: string, isWeatherUpdate: boolean = false): boolean {
     const sourceConfig = this.SOURCE_PRIORITY[source as keyof typeof this.SOURCE_PRIORITY];
-    const currentCategory = this.stockData[category as keyof AllStockData];
-    
-    if (!currentCategory || typeof currentCategory !== 'object' || !('lastUpdated' in currentCategory)) {
-      return true; // No existing data, accept any update
-    }
-    
-    const currentLastUpdated = (currentCategory as StockCategory).lastUpdated;
-    const currentTime = new Date(currentLastUpdated).getTime();
     const now = Date.now();
-    const timeSinceLastUpdate = now - currentTime;
-    const minUpdateInterval = sourceConfig.minUpdateIntervalMinutes * 60 * 1000;
     
-    // Check if enough time has passed since last update
-    if (timeSinceLastUpdate < minUpdateInterval) {
-      return false;
+    // Special handling for weather updates - they should be treated as their own category
+    if (isWeatherUpdate && this.stockData.weather) {
+      // For weather updates, check against weather last update time instead of seeds
+      const weatherLastUpdated = this.stockData.weather.endsAt; // Use weather end time as reference
+      const currentTime = new Date(weatherLastUpdated).getTime();
+      const timeSinceLastUpdate = now - currentTime;
+      const minUpdateInterval = sourceConfig.minUpdateIntervalMinutes * 60 * 1000;
+      
+      // Check if enough time has passed since last weather update
+      if (timeSinceLastUpdate < minUpdateInterval) {
+        return false;
+      }
+    } else {
+      // Normal category handling
+      const currentCategory = this.stockData[category as keyof AllStockData];
+      
+      if (!currentCategory || typeof currentCategory !== 'object' || !('lastUpdated' in currentCategory)) {
+        return true; // No existing data, accept any update
+      }
+      
+      const currentLastUpdated = (currentCategory as StockCategory).lastUpdated;
+      const currentTime = new Date(currentLastUpdated).getTime();
+      const timeSinceLastUpdate = now - currentTime;
+      const minUpdateInterval = sourceConfig.minUpdateIntervalMinutes * 60 * 1000;
+      
+      // Check if enough time has passed since last update
+      if (timeSinceLastUpdate < minUpdateInterval) {
+        return false;
+      }
     }
     
     // Check if a higher priority source has updated recently
