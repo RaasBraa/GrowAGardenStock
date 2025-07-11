@@ -81,6 +81,8 @@ class StockManager {
   };
   
   // Source priority and timing thresholds - much more reasonable
+  // Note: For weather updates, Discord sources (Cactus primary, Vulcan backup) are preferred
+  // WebSocket weather updates are ignored due to unreliable data structure
   private readonly SOURCE_PRIORITY = {
     websocket: { priority: 1, maxDelayMinutes: 10, minUpdateIntervalMinutes: 1 },
     cactus: { priority: 2, maxDelayMinutes: 10, minUpdateIntervalMinutes: 2 },

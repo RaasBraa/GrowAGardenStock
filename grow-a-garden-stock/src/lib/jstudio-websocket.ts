@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { stockManager, StockItem, WeatherInfo, TravellingMerchantItem } from './stock-manager.js';
+import { stockManager, StockItem, TravellingMerchantItem } from './stock-manager.js';
 
 interface WebSocketStockData {
   seed_stock: Array<{
@@ -143,7 +143,13 @@ class JStudioWebSocketListener {
     try {
       console.log('🔄 Processing WebSocket stock update...');
       
-      // Process seeds
+      // Skip weather processing from WebSocket - use Discord sources instead
+      // WebSocket sends all possible weather types, making it unreliable for current weather
+      if (stockData.weather && stockData.weather.length > 0) {
+        console.log('🌤️ Skipping WebSocket weather update - using Discord sources for weather data');
+      }
+      
+      // Process seeds (without weather)
       if (stockData.seed_stock && stockData.seed_stock.length >= 0) {
         const seeds: StockItem[] = stockData.seed_stock.map(item => ({
           id: item.item_id,
@@ -204,20 +210,6 @@ class JStudioWebSocketListener {
         console.log('👤 Merchant Name:', stockData.travelingmerchant_stock.merchantName);
         // Update travelling merchant data through stock manager
         stockManager.updateStockData('websocket', 'seeds', [], undefined, travellingMerchant, stockData.travelingmerchant_stock.merchantName);
-      }
-      
-      // Process weather
-      if (stockData.weather && stockData.weather.length > 0) {
-        const activeWeather = stockData.weather.find(w => w && w.active);
-        if (activeWeather) {
-          const displayName = activeWeather.weather_name.replace(/([A-Z])/g, ' $1').trim();
-          const weather: WeatherInfo = {
-            current: displayName,
-            endsAt: new Date(activeWeather.end_duration_unix * 1000).toISOString()
-          };
-          console.log('🌤️ Weather update:', weather);
-          stockManager.updateStockData('websocket', 'seeds', [], weather);
-        }
       }
       
       console.log('✅ WebSocket stock update processed successfully');
