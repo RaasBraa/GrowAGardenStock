@@ -223,6 +223,10 @@ class StockManager {
     // Check if this is a weather-only update (empty items array with weather data)
     const isWeatherUpdate = items.length === 0 && weather !== undefined;
     
+    if (isWeatherUpdate) {
+      console.log(`🌤️ Processing weather-only update from ${source}:`, weather);
+    }
+    
     // Check if we should accept this update based on source priority
     if (!this.shouldAcceptUpdate(source, category, isWeatherUpdate)) {
       console.log(`⏭️ Skipping ${source} update for ${category} - higher priority source has recent data`);
@@ -274,7 +278,9 @@ class StockManager {
     }
     
     if (weather) {
+      console.log(`🌤️ Setting weather data:`, weather);
       this.stockData.weather = weather;
+      console.log(`🌤️ Weather data set successfully`);
     }
     
     if (travellingMerchant) {
@@ -488,6 +494,7 @@ class StockManager {
 
   private saveStockData() {
     try {
+      console.log(`💾 Saving stock data with weather:`, this.stockData.weather);
       fs.writeFileSync(this.stockDataPath, JSON.stringify(this.stockData, null, 2));
       console.log('💾 Stock data saved successfully');
     } catch (error) {
