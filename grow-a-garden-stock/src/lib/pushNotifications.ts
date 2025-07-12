@@ -47,12 +47,12 @@ export const ALL_ITEMS = {
   seeds: [
     "Carrot", "Strawberry", "Blueberry", "Tomato", "Cauliflower", "Corn", "Watermelon",
     "Green Apple", "Avocado", "Banana", "Pineapple", "Kiwi", "Bell Pepper",
-    "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple"
+    "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple", "Giant Pinecone"
   ],
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
     "Godly Sprinkler", "Tanning Mirror", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray",
-    "Favorite Tool", "Harvest Tool", "Friendship Pot"
+    "Favorite Tool", "Harvest Tool", "Friendship Pot", "Medium Toy", "Medium Treat", "Levelup Lollipop"
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
@@ -381,21 +381,9 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
   cleanupExpiredTokens();
   
   const allTokens = loadTokens().filter(t => t.is_active);
-  console.log(`🌤️ Weather notification: Found ${allTokens.length} active tokens`);
-  
   const interestedTokens = getTokensForWeather(allTokens);
-  console.log(`🌤️ Weather notification: Found ${interestedTokens.length} tokens with weather preferences enabled`);
   
-  // Debug: Show preference details for first few tokens
-  if (interestedTokens.length > 0) {
-    console.log(`🌤️ Weather notification: Sample preferences:`, 
-      interestedTokens.slice(0, 3).map(t => ({
-        token_preview: t.token.substring(0, 20) + '...',
-        weather_pref: t.preferences?.["Weather"],
-        weather_alerts_pref: t.preferences?.["Weather Alerts"]
-      }))
-    );
-  }
+  console.log(`🌤️ Weather notification: ${interestedTokens.length}/${allTokens.length} tokens have weather enabled`);
   
   if (interestedTokens.length === 0) {
     console.log(`📭 No users have weather notifications enabled`);

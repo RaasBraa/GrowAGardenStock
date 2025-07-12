@@ -58,7 +58,6 @@ export function parseDiscordStockMessage(message: Message, category: 'seeds' | '
 }
 
 // Parse Cactus format (components-based)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function parseCactusMessage(message: Message, category: 'seeds' | 'gear' | 'eggs' | 'cosmetics') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mainComponent = message.components[0] as any;
@@ -73,10 +72,10 @@ function parseCactusMessage(message: Message, category: 'seeds' | 'gear' | 'eggs
   
   if (category === 'seeds') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    relevantBlocks = [blocks.find((b: any) => b.type === 10 && b.content && b.content.match(/carrot|strawberry|tomato|blueberry|cauliflower|watermelon|green apple|avocado|banana|rafflesia|pineapple|kiwi|bell pepper|prickly pear|loquat|feijoa|pitcher plant|sugar apple|burning bud/i))].filter(Boolean);
+    relevantBlocks = [blocks.find((b: any) => b.type === 10 && b.content && b.content.match(/carrot|strawberry|tomato|blueberry|cauliflower|watermelon|green apple|avocado|banana|rafflesia|pineapple|kiwi|bell pepper|prickly pear|loquat|feijoa|pitcher plant|sugar apple|burning bud|giant pinecone/i))].filter(Boolean);
   } else if (category === 'gear') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    relevantBlocks = [blocks.find((b: any) => b.type === 10 && b.content && b.content.match(/watering can|trowel|recall wrench|sprinkler|mirror|spray|tool|pot|cleaning spray|magnifying glass|favorite tool|harvest tool/i))].filter(Boolean);
+    relevantBlocks = [blocks.find((b: any) => b.type === 10 && b.content && b.content.match(/watering can|trowel|recall wrench|sprinkler|mirror|spray|tool|pot|cleaning spray|magnifying glass|favorite tool|harvest tool|medium toy|medium treat|levelup lollipop/i))].filter(Boolean);
   } else if (category === 'eggs') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     relevantBlocks = blocks.filter((b: any) => b.type === 10 && b.content && b.content.match(/egg/i));

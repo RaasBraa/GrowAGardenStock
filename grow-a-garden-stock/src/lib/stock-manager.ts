@@ -224,7 +224,7 @@ class StockManager {
     const isWeatherUpdate = items.length === 0 && weather !== undefined;
     
     if (isWeatherUpdate) {
-      console.log(`🌤️ Processing weather-only update from ${source}:`, weather);
+      console.log(`🌤️ Processing weather-only update from ${source}`);
     }
     
     // Check if we should accept this update based on source priority
@@ -286,9 +286,8 @@ class StockManager {
     }
     
     if (weather) {
-      console.log(`🌤️ Setting weather data:`, weather);
       this.stockData.weather = weather;
-      console.log(`🌤️ Weather data set successfully`);
+      console.log(`🌤️ Weather data updated: ${weather.current}`);
     }
     
     if (travellingMerchant) {
@@ -320,7 +319,6 @@ class StockManager {
     if (isWeatherUpdate) {
       // For weather updates, always accept them regardless of timing
       // Weather updates are important and should override timing restrictions
-      console.log(`🌤️ Accepting weather update from ${source} - weather updates bypass timing restrictions`);
       return true;
     } else {
       // Normal category handling
@@ -370,7 +368,6 @@ class StockManager {
     
     // Special handling for weather updates - always accept new weather data
     if (category === 'seeds' && dataHash.includes('weather')) {
-      console.log(`🌤️ Accepting new weather data from ${source} - weather data always updates`);
       return true;
     }
     

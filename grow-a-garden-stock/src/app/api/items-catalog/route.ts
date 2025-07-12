@@ -35,9 +35,10 @@ export async function GET() {
         { id: "beanstalk", name: "Beanstalk", rarity: "Prismatic", category: "seeds" },
         { id: "ember_lily", name: "Ember Lily", rarity: "Prismatic", category: "seeds" },
         { id: "sugar_apple", name: "Sugar Apple", rarity: "Prismatic", category: "seeds" },
-        { id: "burning_bud", name: "Burning Bud", rarity: "Prismatic", category: "seeds" }
+        { id: "burning_bud", name: "Burning Bud", rarity: "Prismatic", category: "seeds" },
+        { id: "giant_pinecone", name: "Giant Pinecone", rarity: "Prismatic", category: "seeds" }
       ],
-      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "beanstalk", "ember_lily", "sugar_apple", "burning_bud"]
+      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "beanstalk", "ember_lily", "sugar_apple", "burning_bud", "giant_pinecone"]
     },
     gear: {
       name: "Gear",
@@ -52,6 +53,8 @@ export async function GET() {
         { id: "basic_sprinkler", name: "Basic Sprinkler", rarity: "Rare", category: "gear" },
         // Legendary
         { id: "advanced_sprinkler", name: "Advanced Sprinkler", rarity: "Legendary", category: "gear" },
+        { id: "medium_toy", name: "Medium Toy", rarity: "Legendary", category: "gear" },
+        { id: "medium_treat", name: "Medium Treat", rarity: "Legendary", category: "gear" },
         // Mythical
         { id: "godly_sprinkler", name: "Godly Sprinkler", rarity: "Mythical", category: "gear" },
         { id: "tanning_mirror", name: "Tanning Mirror", rarity: "Mythical", category: "gear" },
@@ -61,9 +64,11 @@ export async function GET() {
         { id: "cleaning_spray", name: "Cleaning Spray", rarity: "Divine", category: "gear" },
         { id: "favorite_tool", name: "Favorite Tool", rarity: "Divine", category: "gear" },
         { id: "harvest_tool", name: "Harvest Tool", rarity: "Divine", category: "gear" },
-        { id: "friendship_pot", name: "Friendship Pot", rarity: "Divine", category: "gear" }
+        { id: "friendship_pot", name: "Friendship Pot", rarity: "Divine", category: "gear" },
+        // Prismatic
+        { id: "levelup_lollipop", name: "Levelup Lollipop", rarity: "Prismatic", category: "gear" }
       ],
-      defaultEnabled: ["godly_sprinkler", "tanning_mirror", "master_sprinkler", "magnifying_glass"]
+      defaultEnabled: ["godly_sprinkler", "tanning_mirror", "master_sprinkler", "magnifying_glass", "medium_toy", "medium_treat", "levelup_lollipop"]
     },
     eggs: {
       name: "Eggs",
