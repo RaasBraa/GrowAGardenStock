@@ -263,18 +263,26 @@ class StockManager {
     
     // Update the stock data with stock IDs
     if (category === 'seeds' || category === 'gear' || category === 'eggs' || category === 'cosmetics') {
-      const itemsWithStockId = items.map(item => ({
-        ...item,
-        stockId: stockId
-      }));
-      
-      this.stockData[category] = {
-        items: itemsWithStockId,
-        lastUpdated: now,
-        nextUpdate: this.calculateNextUpdate(this.REFRESH_INTERVALS[category]),
-        refreshIntervalMinutes: this.REFRESH_INTERVALS[category],
-        lastStockId: stockId
-      };
+      // For weather-only updates, preserve existing items
+      if (isWeatherUpdate) {
+        console.log(`🌤️ Weather-only update: preserving existing ${category} items`);
+        // Don't update the category items, just update the timestamp
+        this.stockData[category].lastUpdated = now;
+      } else {
+        // Normal update with new items
+        const itemsWithStockId = items.map(item => ({
+          ...item,
+          stockId: stockId
+        }));
+        
+        this.stockData[category] = {
+          items: itemsWithStockId,
+          lastUpdated: now,
+          nextUpdate: this.calculateNextUpdate(this.REFRESH_INTERVALS[category]),
+          refreshIntervalMinutes: this.REFRESH_INTERVALS[category],
+          lastStockId: stockId
+        };
+      }
     }
     
     if (weather) {

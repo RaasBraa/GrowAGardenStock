@@ -45,7 +45,7 @@ interface NotificationData {
 // All available items for notifications
 export const ALL_ITEMS = {
   seeds: [
-    "Carrot", "Strawberry", "Blueberry", "Tomato", "Cauliflower", "Watermelon",
+    "Carrot", "Strawberry", "Blueberry", "Tomato", "Cauliflower", "Corn", "Watermelon",
     "Green Apple", "Avocado", "Banana", "Pineapple", "Kiwi", "Bell Pepper",
     "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple"
   ],
@@ -248,7 +248,8 @@ function getTokensForWeather(tokens: PushTokenEntry[]): PushTokenEntry[] {
   return tokens.filter(token => {
     // Only send notifications if user has explicitly enabled weather
     if (!token.preferences) return false; // No preferences = no notifications
-    return token.preferences["Weather"] === true;
+    // Check for both "Weather" and "Weather Alerts" preferences
+    return token.preferences["Weather"] === true || token.preferences["Weather Alerts"] === true;
   });
 }
 
@@ -380,7 +381,21 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
   cleanupExpiredTokens();
   
   const allTokens = loadTokens().filter(t => t.is_active);
+  console.log(`🌤️ Weather notification: Found ${allTokens.length} active tokens`);
+  
   const interestedTokens = getTokensForWeather(allTokens);
+  console.log(`🌤️ Weather notification: Found ${interestedTokens.length} tokens with weather preferences enabled`);
+  
+  // Debug: Show preference details for first few tokens
+  if (interestedTokens.length > 0) {
+    console.log(`🌤️ Weather notification: Sample preferences:`, 
+      interestedTokens.slice(0, 3).map(t => ({
+        token_preview: t.token.substring(0, 20) + '...',
+        weather_pref: t.preferences?.["Weather"],
+        weather_alerts_pref: t.preferences?.["Weather Alerts"]
+      }))
+    );
+  }
   
   if (interestedTokens.length === 0) {
     console.log(`📭 No users have weather notifications enabled`);

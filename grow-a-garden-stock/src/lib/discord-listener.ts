@@ -95,6 +95,7 @@ async function processCactusMessage(message: Message) {
         current: weatherData.current,
         endsAt: weatherData.endsAt
       };
+      // Send weather-only update - this will preserve existing seeds data
       stockManager.updateStockData('cactus', 'seeds', [], weatherInfo);
     }
   }

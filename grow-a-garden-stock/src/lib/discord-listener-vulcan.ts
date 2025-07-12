@@ -74,6 +74,7 @@ async function processVulcanMessage(message: Message) {
         current: weatherData.current,
         endsAt: weatherData.endsAt
       };
+      // Send weather-only update - this will preserve existing seeds data
       stockManager.updateStockData('vulcan', 'seeds', [], weatherInfo);
     }
   }

@@ -15,6 +15,7 @@ export async function GET() {
         // Rare
         { id: "tomato", name: "Tomato", rarity: "Rare", category: "seeds" },
         { id: "daffodil", name: "Daffodil", rarity: "Rare", category: "seeds" },
+        { id: "corn", name: "Corn", rarity: "Rare", category: "seeds" },
         // Legendary
         { id: "watermelon", name: "Watermelon", rarity: "Legendary", category: "seeds" },
         { id: "pumpkin", name: "Pumpkin", rarity: "Legendary", category: "seeds" },
