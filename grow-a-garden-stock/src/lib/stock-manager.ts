@@ -70,6 +70,7 @@ class StockManager {
   private stockDataPath: string;
   private sources: Map<string, SourceInfo> = new Map();
   private previousStockData: AllStockData | null = null;
+  private lastTravellingMerchantNotification: string | null = null; // Track last notification to prevent duplicates
   
   // Timing configuration - much more reasonable timeouts
   private readonly REFRESH_INTERVALS = {
@@ -224,7 +225,7 @@ class StockManager {
     const isWeatherUpdate = items.length === 0 && weather !== undefined;
     
     // Check if this is a travelling merchant update (empty items array with travelling merchant data)
-    const isTravellingMerchantUpdate = items.length === 0 && travellingMerchant !== undefined && travellingMerchant.length > 0;
+    const isTravellingMerchantUpdate = items.length === 0 && travellingMerchant !== undefined;
     
     if (isWeatherUpdate) {
       console.log(`🌤️ Processing weather-only update from ${source}`);
@@ -303,15 +304,28 @@ class StockManager {
       console.log(`🌤️ Weather data updated: ${weather.current}`);
     }
     
-    if (travellingMerchant) {
-      console.log(`🛒 About to save travelling merchant data with ${travellingMerchant.length} items`);
-      this.stockData.travellingMerchant = {
-        merchantName: merchantName || 'Unknown Merchant',
-        items: travellingMerchant,
-        lastUpdated: now,
-        isActive: travellingMerchant.length > 0
-      };
-      console.log(`🛒 Travelling merchant data updated: ${merchantName || 'Unknown Merchant'} with ${travellingMerchant.length} items`);
+    if (travellingMerchant !== undefined) {
+      // Handle travelling merchant updates (both arrival and departure)
+      if (travellingMerchant.length > 0) {
+        // Merchant has arrived with items
+        console.log(`🛒 About to save travelling merchant data with ${travellingMerchant.length} items`);
+        this.stockData.travellingMerchant = {
+          merchantName: merchantName || 'Unknown Merchant',
+          items: travellingMerchant,
+          lastUpdated: now,
+          isActive: true
+        };
+        console.log(`🛒 Travelling merchant data updated: ${merchantName || 'Unknown Merchant'} with ${travellingMerchant.length} items`);
+      } else {
+        // Merchant has left (empty array)
+        console.log(`🛒 Clearing travelling merchant data - merchant has left`);
+        this.stockData.travellingMerchant = {
+          merchantName: 'No Merchant',
+          items: [],
+          lastUpdated: now,
+          isActive: false
+        };
+      }
     }
     
     this.stockData.lastUpdated = now;
@@ -343,10 +357,10 @@ class StockManager {
     }
     
     // Special handling for travelling merchant updates - always accept them regardless of timing
-    if (travellingMerchant && travellingMerchant.length > 0) {
-      // For travelling merchant updates, always accept them regardless of timing
+    if (travellingMerchant !== undefined) {
+      // For travelling merchant updates (both arrival and departure), always accept them regardless of timing
       // Travelling merchant updates are important and should override timing restrictions
-      console.log(`🔍 Accepting travelling merchant update from ${source}`);
+      console.log(`🔍 Accepting travelling merchant update from ${source} (${travellingMerchant.length} items)`);
       return true;
     }
     
@@ -477,9 +491,24 @@ class StockManager {
       await sendWeatherAlertNotification(weather.current, `Ends: ${weather.endsAt}`);
     }
     
-    // Send travelling merchant notifications
+    // Send travelling merchant notifications (only when merchant arrives with items)
     if (travellingMerchant && travellingMerchant.length > 0) {
-      await sendCategoryNotification('Travelling Merchant', 'Travelling Merchant', `The ${merchantName || 'travelling'} merchant has arrived with new items!`);
+      // Create a unique identifier for this travelling merchant update
+      const merchantIdentifier = `${merchantName || 'Unknown'}-${travellingMerchant.map(item => `${item.id}:${item.quantity}`).sort().join(',')}`;
+      
+      // Only send notification if we haven't already sent one for this exact merchant with these exact items
+      if (this.lastTravellingMerchantNotification !== merchantIdentifier) {
+        console.log(`🔔 Sending travelling merchant notification for: ${merchantName || 'Unknown Merchant'}`);
+        await sendCategoryNotification('Travelling Merchant', 'Travelling Merchant', `The ${merchantName || 'travelling'} merchant has arrived with new items!`);
+        this.lastTravellingMerchantNotification = merchantIdentifier;
+        console.log(`🔔 Travelling merchant notification sent and tracked: ${merchantIdentifier}`);
+      } else {
+        console.log(`🔔 Skipping travelling merchant notification - already sent for: ${merchantIdentifier}`);
+      }
+    } else if (travellingMerchant !== undefined && travellingMerchant.length === 0) {
+      // Clear the notification tracking when merchant leaves
+      this.lastTravellingMerchantNotification = null;
+      console.log(`🔔 Cleared travelling merchant notification tracking - merchant has left`);
     }
     
     // Send notifications based on category type
