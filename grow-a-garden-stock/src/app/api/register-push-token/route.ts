@@ -83,6 +83,20 @@ function getClientIP(req: NextRequest): string {
   return 'unknown';
 }
 
+// Helper function to merge preferences without overwriting existing ones
+function mergePreferences(existingPreferences: { [itemName: string]: boolean } | undefined, newPreferences: { [itemName: string]: boolean } | undefined): { [itemName: string]: boolean } {
+  if (!newPreferences) {
+    return existingPreferences || {};
+  }
+  
+  if (!existingPreferences) {
+    return newPreferences;
+  }
+  
+  // Merge preferences: keep existing ones, add/update new ones
+  return { ...existingPreferences, ...newPreferences };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body: RegisterRequest = await req.json();
@@ -112,7 +126,17 @@ export async function POST(req: NextRequest) {
       existingToken.is_active = true;
       if (device_type) existingToken.device_type = device_type;
       if (app_version) existingToken.app_version = app_version;
-      if (preferences) existingToken.preferences = preferences;
+      
+      // FIXED: Merge preferences instead of overwriting
+      if (preferences) {
+        const mergedPreferences = mergePreferences(existingToken.preferences, preferences);
+        existingToken.preferences = mergedPreferences;
+        console.log(`🔄 Merged preferences for token: ${token.substring(0, 20)}...`);
+        console.log(`   Previous: ${Object.keys(existingToken.preferences || {}).length} items`);
+        console.log(`   New: ${Object.keys(preferences).length} items`);
+        console.log(`   Merged: ${Object.keys(mergedPreferences).length} items`);
+      }
+      
       if (onesignal_player_id) existingToken.onesignal_player_id = onesignal_player_id;
       existingToken.user_agent = req.headers.get('user-agent') || undefined;
       existingToken.ip_address = getClientIP(req);
@@ -123,7 +147,8 @@ export async function POST(req: NextRequest) {
       
       return NextResponse.json({ 
         message: 'Token updated successfully',
-        action: 'updated'
+        action: 'updated',
+        preferences: existingToken.preferences
       });
     }
     
@@ -149,7 +174,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       message: 'Token registered successfully',
       action: 'registered',
-      totalTokens: tokens.length
+      totalTokens: tokens.length,
+      preferences: newToken.preferences
     });
     
   } catch (error) {
