@@ -14,6 +14,7 @@ interface PushTokenEntry {
   app_version?: string;
   user_agent?: string;
   ip_address?: string;
+  onesignal_player_id?: string; // OneSignal player ID
 }
 
 interface TokenResponse {
@@ -24,6 +25,7 @@ interface TokenResponse {
   device_type?: 'ios' | 'android';
   app_version?: string;
   ip_address?: string;
+  onesignal_player_id?: string; // OneSignal player ID
 }
 
 interface PaginationInfo {
@@ -78,7 +80,8 @@ export async function GET(req: NextRequest) {
           is_active: token.is_active,
           device_type: token.device_type,
           app_version: token.app_version,
-          ip_address: token.ip_address
+          ip_address: token.ip_address,
+          onesignal_player_id: token.onesignal_player_id
         }));
       
       response.tokens = paginatedTokens;

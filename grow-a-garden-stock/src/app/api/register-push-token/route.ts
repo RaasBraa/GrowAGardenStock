@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Expo } from 'expo-server-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -15,6 +14,7 @@ interface PushTokenEntry {
   user_agent?: string;
   ip_address?: string;
   preferences?: { [itemName: string]: boolean };
+  onesignal_player_id?: string; // OneSignal player ID
 }
 
 interface RegisterRequest {
@@ -22,6 +22,7 @@ interface RegisterRequest {
   device_type?: 'ios' | 'android';
   app_version?: string;
   preferences?: { [itemName: string]: boolean };
+  onesignal_player_id?: string; // OneSignal player ID
 }
 
 function loadTokens(): PushTokenEntry[] {
@@ -43,7 +44,7 @@ function saveTokens(tokens: PushTokenEntry[]) {
   }
 }
 
-function validateToken(token: string): { isValid: boolean; error?: string } {
+function validateToken(token: string, onesignal_player_id?: string): { isValid: boolean; error?: string } {
   if (!token || typeof token !== 'string') {
     return { isValid: false, error: 'Token is required and must be a string' };
   }
@@ -53,8 +54,12 @@ function validateToken(token: string): { isValid: boolean; error?: string } {
     return { isValid: true };
   }
   
-  if (!Expo.isExpoPushToken(token)) {
-    return { isValid: false, error: 'Invalid Expo push token format' };
+  // For OneSignal, we expect either a valid OneSignal player ID or a legacy token
+  if (onesignal_player_id) {
+    // OneSignal player IDs are typically UUIDs
+    if (!onesignal_player_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      return { isValid: false, error: 'Invalid OneSignal player ID format' };
+    }
   }
   
   return { isValid: true };
@@ -81,10 +86,10 @@ function getClientIP(req: NextRequest): string {
 export async function POST(req: NextRequest) {
   try {
     const body: RegisterRequest = await req.json();
-    const { token, device_type, app_version, preferences } = body;
+    const { token, device_type, app_version, preferences, onesignal_player_id } = body;
     
     // Validate token
-    const validation = validateToken(token);
+    const validation = validateToken(token, onesignal_player_id);
     if (!validation.isValid) {
       return NextResponse.json(
         { 
@@ -108,6 +113,7 @@ export async function POST(req: NextRequest) {
       if (device_type) existingToken.device_type = device_type;
       if (app_version) existingToken.app_version = app_version;
       if (preferences) existingToken.preferences = preferences;
+      if (onesignal_player_id) existingToken.onesignal_player_id = onesignal_player_id;
       existingToken.user_agent = req.headers.get('user-agent') || undefined;
       existingToken.ip_address = getClientIP(req);
       
@@ -130,6 +136,7 @@ export async function POST(req: NextRequest) {
       device_type,
       app_version,
       preferences,
+      onesignal_player_id,
       user_agent: req.headers.get('user-agent') || undefined,
       ip_address: getClientIP(req)
     };

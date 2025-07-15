@@ -3,7 +3,7 @@ import * as path from 'path';
 import { jstudioWebSocket } from './jstudio-websocket.js';
 import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener.js';
 import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
-import { sendItemNotification, sendWeatherAlertNotification, sendCategoryNotification } from './pushNotifications.js';
+import { sendItemNotification, sendWeatherAlertNotification, sendCategoryNotification } from './notification-manager.js';
 import { randomUUID } from 'crypto';
 
 
