@@ -1,5 +1,5 @@
-import { sendItemNotification as sendOneSignalItemNotification } from './onesignal-notifications';
-import { sendItemNotification as sendExpoItemNotification } from './pushNotifications';
+import { sendItemNotification as sendOneSignalItemNotification } from './onesignal-notifications.js';
+import { sendItemNotification as sendExpoItemNotification } from './pushNotifications.js';
 
 // Environment configuration
 const USE_ONESIGNAL = process.env.USE_ONESIGNAL === 'true';
@@ -67,7 +67,7 @@ export async function sendWeatherAlertNotification(
   // Send OneSignal notifications
   if (config.useOneSignal && (deviceType !== 'expo')) {
     promises.push(
-      import('./onesignal-notifications').then(({ sendWeatherAlertNotification }) => 
+      import('./onesignal-notifications.js').then(({ sendWeatherAlertNotification }) => 
         sendWeatherAlertNotification(weatherType, description)
       ).then(() => console.log(`✅ OneSignal weather alert sent`))
       .catch(error => console.error(`❌ OneSignal weather alert failed:`, error))
@@ -77,7 +77,7 @@ export async function sendWeatherAlertNotification(
   // Send Expo notifications
   if (config.useExpo && (deviceType !== 'onesignal')) {
     promises.push(
-      import('./pushNotifications').then(({ sendWeatherAlertNotification }) => 
+      import('./pushNotifications.js').then(({ sendWeatherAlertNotification }) => 
         sendWeatherAlertNotification(weatherType, description)
       ).then(() => console.log(`✅ Expo weather alert sent`))
       .catch(error => console.error(`❌ Expo weather alert failed:`, error))
@@ -102,7 +102,7 @@ export async function sendCategoryNotification(
   // Send OneSignal notifications
   if (config.useOneSignal && (deviceType !== 'expo')) {
     promises.push(
-      import('./onesignal-notifications').then(({ sendCategoryNotification }) => 
+      import('./onesignal-notifications.js').then(({ sendCategoryNotification }) => 
         sendCategoryNotification(categoryName, categoryDisplayName, description)
       ).then(() => console.log(`✅ OneSignal category notification sent`))
       .catch(error => console.error(`❌ OneSignal category notification failed:`, error))
@@ -112,7 +112,7 @@ export async function sendCategoryNotification(
   // Send Expo notifications
   if (config.useExpo && (deviceType !== 'onesignal')) {
     promises.push(
-      import('./pushNotifications').then(({ sendCategoryNotification }) => 
+      import('./pushNotifications.js').then(({ sendCategoryNotification }) => 
         sendCategoryNotification(categoryName, categoryDisplayName, description)
       ).then(() => console.log(`✅ Expo category notification sent`))
       .catch(error => console.error(`❌ Expo category notification failed:`, error))
