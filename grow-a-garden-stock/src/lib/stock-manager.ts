@@ -255,8 +255,8 @@ class StockManager {
 
     console.log(`📥 Received ${source} update for ${category}:`, items.length, 'items');
     
-    // Validate that critical categories are not empty (but allow weather-only updates)
-    if ((category === 'seeds' || category === 'gear' || category === 'eggs') && items.length === 0 && !weather) {
+    // Validate that critical categories are not empty (but allow weather-only updates and travelling merchant updates)
+    if ((category === 'seeds' || category === 'gear' || category === 'eggs') && items.length === 0 && !weather && !travellingMerchant) {
       console.log(`⚠️ Rejecting empty ${category} update from ${source} - shop should never be completely empty`);
       return;
     }
