@@ -268,6 +268,8 @@ class StockManager {
     // Store previous data for comparison
     this.previousStockData = JSON.parse(JSON.stringify(this.stockData));
     
+    console.log(`💾 About to save travelling merchant data:`, travellingMerchant ? travellingMerchant.length : 0, 'items');
+    
     // Update the stock data with stock IDs
     if (category === 'seeds' || category === 'gear' || category === 'eggs' || category === 'cosmetics') {
       // For weather-only updates, preserve existing items
@@ -302,6 +304,7 @@ class StockManager {
     }
     
     if (travellingMerchant) {
+      console.log(`🛒 About to save travelling merchant data with ${travellingMerchant.length} items`);
       this.stockData.travellingMerchant = {
         merchantName: merchantName || 'Unknown Merchant',
         items: travellingMerchant,
@@ -396,18 +399,25 @@ class StockManager {
     const sourceInfo = this.sources.get(source);
     if (!sourceInfo) return false;
     
+    console.log(`🔍 shouldUpdateData: checking if ${source} update for ${category} should be saved`);
+    console.log(`🔍 Current data hash: ${sourceInfo.lastDataHash}`);
+    console.log(`🔍 New data hash: ${dataHash}`);
+    
     // If this is the same data we already have, skip
     if (sourceInfo.lastDataHash === dataHash) {
+      console.log(`🔍 Rejecting ${source} update for ${category} - same data hash`);
       return false;
     }
     
     // Special handling for weather updates - always accept new weather data
     if (category === 'seeds' && dataHash.includes('weather')) {
+      console.log(`🔍 Accepting ${source} update for ${category} - weather update`);
       return true;
     }
     
     // Special handling for travelling merchant updates - always accept new travelling merchant data
     if (dataHash.includes('travellingMerchant')) {
+      console.log(`🔍 Accepting ${source} update for ${category} - travelling merchant update`);
       return true;
     }
     
@@ -418,12 +428,18 @@ class StockManager {
       const currentTime = new Date(currentLastUpdated).getTime();
       const sourceTime = new Date(sourceInfo.lastUpdate).getTime();
       
+      console.log(`🔍 Current category last updated: ${currentLastUpdated}`);
+      console.log(`🔍 Source last update: ${sourceInfo.lastUpdate}`);
+      console.log(`🔍 Current time: ${currentTime}, source time: ${sourceTime}`);
+      
       // Only update if source data is newer
       if (sourceTime <= currentTime) {
+        console.log(`🔍 Rejecting ${source} update for ${category} - source data not newer`);
         return false;
       }
     }
     
+    console.log(`🔍 Accepting ${source} update for ${category} - data is newer`);
     return true;
   }
 
@@ -438,7 +454,9 @@ class StockManager {
       } : ''
     };
     
-    return JSON.stringify(data);
+    const hash = JSON.stringify(data);
+    console.log(`🔍 Created data hash for ${category}:`, hash);
+    return hash;
   }
 
   private async sendNotifications(
