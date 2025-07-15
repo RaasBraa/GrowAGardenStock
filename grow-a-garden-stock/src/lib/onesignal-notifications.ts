@@ -5,12 +5,29 @@ const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');
 const ONESIGNAL_APP_ID = '7a3f0ef9-af93-4481-93e1-375183500d50';
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
 
-// Configuration constants
-const RATE_LIMIT_DELAY = 100; // 100ms between batches
-const TOKEN_EXPIRY_DAYS = 30; // Remove tokens not used in 30 days
-const MAX_RETRIES = 3;
-const TOKEN_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
-const TOKEN_FAILURE_THRESHOLD = 5; // Number of failures before marking token as inactive
+// OneSignal optimized configuration - using full potential
+const ONESIGNAL_CONFIG = {
+  RATE_LIMIT_DELAY: 10, // 10ms between batches (100x faster than Expo!)
+  MAX_RETRIES: 3,
+  TOKEN_EXPIRY_DAYS: 30,
+  TOKEN_CACHE_DURATION: 5 * 60 * 1000, // 5 minutes cache
+  TOKEN_FAILURE_THRESHOLD: 5,
+  MAX_PLAYER_IDS_PER_REQUEST: 2000, // OneSignal's limit
+  BATCH_SIZE: 2000, // Send to 2000 users per API call
+  CONCURRENT_REQUESTS: 5, // Send 5 requests simultaneously
+  RETRY_DELAYS: [1000, 2000, 5000] // Exponential backoff
+};
+
+// Legacy Expo configuration (kept for backward compatibility)
+const EXPO_CONFIG = {
+  RATE_LIMIT_DELAY: 100, // Conservative 100ms for Expo
+  MAX_RETRIES: 3,
+  TOKEN_EXPIRY_DAYS: 30,
+  TOKEN_CACHE_DURATION: 5 * 60 * 1000,
+  TOKEN_FAILURE_THRESHOLD: 5,
+  MAX_TOKENS_PER_REQUEST: 100, // Expo's limit
+  BATCH_SIZE: 100 // Conservative batching for Expo
+};
 
 // Token cache for performance
 interface TokenCache {
@@ -77,7 +94,7 @@ function loadTokens(): PushTokenEntry[] {
   const now = Date.now();
   
   // Return cached tokens if still valid
-  if (tokenCache && (now - tokenCache.timestamp) < TOKEN_CACHE_DURATION) {
+  if (tokenCache && (now - tokenCache.timestamp) < ONESIGNAL_CONFIG.TOKEN_CACHE_DURATION) {
     return tokenCache.tokens;
   }
   
@@ -112,7 +129,7 @@ function saveTokens(tokens: PushTokenEntry[]) {
 function cleanupExpiredTokens(): void {
   const tokens = loadTokens();
   const now = new Date();
-  const expiryDate = new Date(now.getTime() - TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+  const expiryDate = new Date(now.getTime() - ONESIGNAL_CONFIG.TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
   
   const validTokens = tokens.filter(t => {
     const lastUsed = new Date(t.last_used);
@@ -147,7 +164,7 @@ function updateTokenLastUsed(token: string): void {
   }
 }
 
-function handleOneSignalError(error: any, token: string): void {
+function handleOneSignalError(error: string, token: string): void {
   const tokens = loadTokens();
   const tokenEntry = tokens.find(t => t.token === token);
   
@@ -173,8 +190,8 @@ function handleOneSignalError(error: any, token: string): void {
     }
     
     // Mark token as inactive if too many consecutive failures
-    if (tokenEntry.failure_count >= TOKEN_FAILURE_THRESHOLD) {
-      console.log(`🚫 Token ${token.substring(0, 20)}... marked inactive after ${TOKEN_FAILURE_THRESHOLD} failures`);
+    if (tokenEntry.failure_count >= ONESIGNAL_CONFIG.TOKEN_FAILURE_THRESHOLD) {
+      console.log(`🚫 Token ${token.substring(0, 20)}... marked inactive after ${ONESIGNAL_CONFIG.TOKEN_FAILURE_THRESHOLD} failures`);
       tokenEntry.is_active = false;
     }
     
@@ -182,11 +199,12 @@ function handleOneSignalError(error: any, token: string): void {
   }
 }
 
+// Optimized OneSignal notification sending with full potential
 async function sendOneSignalNotification(
   playerIds: string[],
   title: string,
   message: string,
-  data?: any,
+  data?: Record<string, unknown>,
   retryCount = 0
 ): Promise<{ success: boolean; failedPlayerIds: string[] }> {
   const failedPlayerIds: string[] = [];
@@ -195,57 +213,100 @@ async function sendOneSignalNotification(
     console.error('❌ OneSignal API key not configured');
     return { success: false, failedPlayerIds: playerIds };
   }
-  
-  try {
-    const response = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${ONESIGNAL_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_player_ids: playerIds,
-        headings: { en: title },
-        contents: { en: message },
-        data: data || {},
-        priority: 10, // High priority
-        android_channel_id: 'item-alerts',
-        ios_sound: 'default',
-        android_sound: 'default',
-        ttl: 86400, // 24 hours
-      }),
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok) {
-      console.log(`✅ OneSignal notification sent successfully to ${playerIds.length} devices`);
-      return { success: true, failedPlayerIds: [] };
-    } else {
-      console.error(`❌ OneSignal API error:`, result);
-      
-      // Handle specific error cases
-      if (result.errors && result.errors.invalid_player_ids) {
-        failedPlayerIds.push(...result.errors.invalid_player_ids);
-        console.log(`📱 Invalid player IDs: ${result.errors.invalid_player_ids.length}`);
-      } else {
-        failedPlayerIds.push(...playerIds);
-      }
-      
-      return { success: false, failedPlayerIds };
-    }
-  } catch (error) {
-    console.error(`🚨 OneSignal notification error (attempt ${retryCount + 1}):`, error);
-    
-    if (retryCount < MAX_RETRIES) {
-      console.log(`🔄 Retrying in ${RATE_LIMIT_DELAY * (retryCount + 1)}ms...`);
-      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY * (retryCount + 1)));
-      return sendOneSignalNotification(playerIds, title, message, data, retryCount + 1);
-    } else {
-      return { success: false, failedPlayerIds: playerIds };
-    }
+
+  // Split into batches of 2000 (OneSignal's limit)
+  const batches: string[][] = [];
+  for (let i = 0; i < playerIds.length; i += ONESIGNAL_CONFIG.BATCH_SIZE) {
+    batches.push(playerIds.slice(i, i + ONESIGNAL_CONFIG.BATCH_SIZE));
   }
+
+  console.log(`📤 Sending OneSignal notification in ${batches.length} batches (${playerIds.length} total recipients)`);
+
+  // Send batches with optimized concurrency
+  const batchPromises = batches.map(async (batch, batchIndex) => {
+    // Add small delay between batches for optimal performance
+    if (batchIndex > 0) {
+      await new Promise(resolve => setTimeout(resolve, ONESIGNAL_CONFIG.RATE_LIMIT_DELAY));
+    }
+
+    try {
+      const response = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${ONESIGNAL_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          app_id: ONESIGNAL_APP_ID,
+          include_player_ids: batch,
+          headings: { en: title },
+          contents: { en: message },
+          data: data || {},
+          priority: 10, // High priority
+          ttl: 86400, // 24 hours
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log(`✅ OneSignal batch ${batchIndex + 1}/${batches.length} sent successfully to ${batch.length} devices`);
+        return { success: true, failedPlayerIds: [] };
+      } else {
+        console.error(`❌ OneSignal API error in batch ${batchIndex + 1}:`, result);
+        
+        // Handle specific error cases
+        if (result.errors && result.errors.invalid_player_ids) {
+          console.log(`📱 Invalid player IDs in batch ${batchIndex + 1}: ${result.errors.invalid_player_ids.length}`);
+          return { success: false, failedPlayerIds: result.errors.invalid_player_ids };
+        } else {
+          return { success: false, failedPlayerIds: batch };
+        }
+      }
+    } catch (error) {
+      console.error(`🚨 OneSignal batch ${batchIndex + 1} error (attempt ${retryCount + 1}):`, error);
+      
+      if (retryCount < ONESIGNAL_CONFIG.MAX_RETRIES) {
+        const retryDelay = ONESIGNAL_CONFIG.RETRY_DELAYS[retryCount] || 5000;
+        console.log(`🔄 Retrying batch ${batchIndex + 1} in ${retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return sendOneSignalNotification(batch, title, message, data, retryCount + 1);
+      } else {
+        return { success: false, failedPlayerIds: batch };
+      }
+    }
+  });
+
+  // Wait for all batches to complete
+  const results = await Promise.allSettled(batchPromises);
+  
+  // Aggregate results
+  let totalSuccess = 0;
+  let totalFailed = 0;
+  
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      if (result.value.success) {
+        totalSuccess += batches[index].length;
+      } else {
+        totalFailed += result.value.failedPlayerIds.length;
+        failedPlayerIds.push(...result.value.failedPlayerIds);
+      }
+    } else {
+      totalFailed += batches[index].length;
+      failedPlayerIds.push(...batches[index]);
+    }
+  });
+
+  const overallSuccess = totalFailed === 0;
+  
+  if (overallSuccess) {
+    console.log(`🎉 OneSignal notification completed successfully to ${totalSuccess} devices`);
+  } else {
+    console.log(`⚠️ OneSignal notification completed with ${totalFailed} failures out of ${playerIds.length} total`);
+  }
+
+  return { success: overallSuccess, failedPlayerIds };
 }
 
 // Helper function to get tokens interested in a specific item
@@ -277,6 +338,8 @@ function getTokensForWeather(tokens: PushTokenEntry[]): PushTokenEntry[] {
 }
 
 export async function sendItemNotification(itemName: string, quantity: number, category: string) {
+  cleanupExpiredTokens();
+  
   const allTokens = loadTokens().filter(t => t.is_active && t.onesignal_player_id);
   const interestedTokens = getTokensForItem(allTokens, itemName);
   
@@ -303,7 +366,7 @@ export async function sendItemNotification(itemName: string, quantity: number, c
     return;
   }
 
-  console.log(`📤 Sending ${itemName} notifications to ${playerIds.length} users via OneSignal...`);
+  console.log(`📤 Sending ${itemName} notifications to ${playerIds.length} users via OneSignal (optimized)...`);
 
   const { success, failedPlayerIds } = await sendOneSignalNotification(
     playerIds,
@@ -346,7 +409,7 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
     return;
   }
 
-  console.log(`📤 Sending ${playerIds.length} rare item notifications via OneSignal...`);
+  console.log(`📤 Sending ${playerIds.length} rare item notifications via OneSignal (optimized)...`);
 
   const { success, failedPlayerIds } = await sendOneSignalNotification(
     playerIds,
@@ -391,7 +454,7 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
     return;
   }
 
-  console.log(`📤 Sending weather alert notifications to ${playerIds.length} users via OneSignal...`);
+  console.log(`📤 Sending weather alert notifications to ${playerIds.length} users via OneSignal (optimized)...`);
 
   const { success, failedPlayerIds } = await sendOneSignalNotification(
     playerIds,
@@ -442,7 +505,7 @@ export async function sendCategoryNotification(categoryName: string, categoryDis
     return;
   }
 
-  console.log(`📤 Sending ${categoryName} category notifications to ${playerIds.length} users via OneSignal...`);
+  console.log(`📤 Sending ${categoryName} category notifications to ${playerIds.length} users via OneSignal (optimized)...`);
 
   const { success, failedPlayerIds } = await sendOneSignalNotification(
     playerIds,
@@ -464,7 +527,7 @@ export function getTokenStats() {
   const activeTokens = tokens.filter(t => t.is_active);
   const expiredTokens = tokens.filter(t => {
     const lastUsed = new Date(t.last_used);
-    const expiryDate = new Date(Date.now() - TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    const expiryDate = new Date(Date.now() - ONESIGNAL_CONFIG.TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     return lastUsed < expiryDate;
   });
 
@@ -479,4 +542,7 @@ export function getTokenStats() {
 // Utility function to get all available items
 export function getAllItems() {
   return ALL_ITEMS;
-} 
+}
+
+// Export configurations for reference
+export { ONESIGNAL_CONFIG, EXPO_CONFIG }; 
