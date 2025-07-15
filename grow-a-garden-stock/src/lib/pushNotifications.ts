@@ -257,7 +257,8 @@ export async function sendItemNotification(itemName: string, quantity: number, c
   // Always send notifications for stock updates (removed duplicate check)
   // scheduleCleanup();
   
-  const allTokens = loadTokens().filter(t => t.is_active);
+  // TEMPORARY: Disable failure count filtering - send to all tokens
+  const allTokens = loadTokens(); // Removed .filter(t => t.is_active)
   const interestedTokens = getTokensForItem(allTokens, itemName);
   
   if (interestedTokens.length === 0) {
@@ -292,6 +293,15 @@ export async function sendItemNotification(itemName: string, quantity: number, c
   const chunks = expo.chunkPushNotifications(messages);
   const allFailedTokens: string[] = [];
 
+  // TEMPORARY: Log token status for debugging
+  const inactiveTokens = interestedTokens.filter(t => !t.is_active);
+  if (inactiveTokens.length > 0) {
+    console.log(`⚠️  TEMPORARY: Including ${inactiveTokens.length} inactive tokens for ${itemName}`);
+    inactiveTokens.forEach(t => {
+      console.log(`   Inactive token: ${t.token.substring(0, 20)}... (failures: ${t.failure_count || 0})`);
+    });
+  }
+
   console.log(`📤 Sending ${itemName} notifications to ${interestedTokens.length} users in ${chunks.length} chunks...`);
 
   // Process in batches for better performance
@@ -317,7 +327,8 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
   // Clean up expired tokens first
   cleanupExpiredTokens();
   
-  const allTokens = loadTokens().filter(t => t.is_active);
+  // TEMPORARY: Disable failure count filtering - send to all tokens
+  const allTokens = loadTokens(); // Removed .filter(t => t.is_active)
   const interestedTokens = getTokensForItem(allTokens, itemName);
   
   if (interestedTokens.length === 0) {
@@ -380,7 +391,8 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
 export async function sendWeatherAlertNotification(weatherType: string, description: string) {
   cleanupExpiredTokens();
   
-  const allTokens = loadTokens().filter(t => t.is_active);
+  // TEMPORARY: Disable failure count filtering - send to all tokens
+  const allTokens = loadTokens(); // Removed .filter(t => t.is_active)
   const interestedTokens = getTokensForWeather(allTokens);
   
   console.log(`🌤️ Weather notification: ${interestedTokens.length}/${allTokens.length} tokens have weather enabled`);
@@ -439,7 +451,8 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
 export async function sendCategoryNotification(categoryName: string, categoryDisplayName: string, description: string) {
   cleanupExpiredTokens();
   
-  const allTokens = loadTokens().filter(t => t.is_active);
+  // TEMPORARY: Disable failure count filtering - send to all tokens
+  const allTokens = loadTokens(); // Removed .filter(t => t.is_active)
   const interestedTokens = getTokensForCategory(allTokens, categoryName);
   
   if (interestedTokens.length === 0) {

@@ -15,6 +15,8 @@ interface PushTokenEntry {
   ip_address?: string;
   preferences?: { [itemName: string]: boolean };
   onesignal_player_id?: string; // OneSignal player ID
+  failure_count?: number; // Track consecutive failures
+  last_failure?: string; // Track when last failure occurred
 }
 
 interface RegisterRequest {
@@ -123,7 +125,16 @@ export async function POST(req: NextRequest) {
     if (existingToken) {
       // Update existing token with new metadata
       existingToken.last_used = new Date().toISOString();
-      existingToken.is_active = true;
+      
+      // FIXED: Reactivate token if it was previously inactive
+      if (!existingToken.is_active) {
+        console.log(`🔄 Reactivating previously inactive token: ${token.substring(0, 20)}...`);
+        console.log(`   Previous failure count: ${existingToken.failure_count || 0}`);
+        existingToken.is_active = true;
+        existingToken.failure_count = 0; // Reset failure count
+        existingToken.last_failure = undefined; // Clear last failure
+      }
+      
       if (device_type) existingToken.device_type = device_type;
       if (app_version) existingToken.app_version = app_version;
       
