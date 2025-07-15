@@ -84,9 +84,9 @@ class StockManager {
   // Note: For weather updates, Discord sources (Cactus primary, Vulcan backup) are preferred
   // WebSocket weather updates are ignored due to unreliable data structure
   private readonly SOURCE_PRIORITY = {
-    websocket: { priority: 1, maxDelayMinutes: 10, minUpdateIntervalMinutes: 1 },
-    cactus: { priority: 2, maxDelayMinutes: 10, minUpdateIntervalMinutes: 2 },
-    vulcan: { priority: 3, maxDelayMinutes: 10, minUpdateIntervalMinutes: 5 }
+    websocket: { priority: 1, maxDelayMinutes: 2, minUpdateIntervalMinutes: 1 },
+    cactus: { priority: 2, maxDelayMinutes: 2, minUpdateIntervalMinutes: 2 },
+    vulcan: { priority: 3, maxDelayMinutes: 2, minUpdateIntervalMinutes: 5 }
   };
 
   constructor() {
@@ -223,12 +223,19 @@ class StockManager {
     // Check if this is a weather-only update (empty items array with weather data)
     const isWeatherUpdate = items.length === 0 && weather !== undefined;
     
+    // Check if this is a travelling merchant update (empty items array with travelling merchant data)
+    const isTravellingMerchantUpdate = items.length === 0 && travellingMerchant !== undefined && travellingMerchant.length > 0;
+    
     if (isWeatherUpdate) {
       console.log(`🌤️ Processing weather-only update from ${source}`);
     }
     
+    if (isTravellingMerchantUpdate) {
+      console.log(`🛒 Processing travelling merchant update from ${source}`);
+    }
+    
     // Check if we should accept this update based on source priority
-    if (!this.shouldAcceptUpdate(source, category, isWeatherUpdate)) {
+    if (!this.shouldAcceptUpdate(source, category, isWeatherUpdate, travellingMerchant)) {
       console.log(`⏭️ Skipping ${source} update for ${category} - higher priority source has recent data`);
       return;
     }
@@ -238,7 +245,7 @@ class StockManager {
     sourceInfo.lastSuccessfulUpdate = now;
     
     // Create data hash for comparison
-    const dataHash = this.createDataHash(category, items, weather);
+    const dataHash = this.createDataHash(category, items, weather, travellingMerchant, merchantName);
     
     // Check if this is newer data than what we have
     if (!this.shouldUpdateData(source, category, dataHash)) {
@@ -266,6 +273,10 @@ class StockManager {
       // For weather-only updates, preserve existing items
       if (isWeatherUpdate) {
         console.log(`🌤️ Weather-only update: preserving existing ${category} items`);
+        // Don't update the category items, just update the timestamp
+        this.stockData[category].lastUpdated = now;
+      } else if (isTravellingMerchantUpdate) {
+        console.log(`🛒 Travelling merchant update: preserving existing ${category} items`);
         // Don't update the category items, just update the timestamp
         this.stockData[category].lastUpdated = now;
       } else {
@@ -297,6 +308,7 @@ class StockManager {
         lastUpdated: now,
         isActive: travellingMerchant.length > 0
       };
+      console.log(`🛒 Travelling merchant data updated: ${merchantName || 'Unknown Merchant'} with ${travellingMerchant.length} items`);
     }
     
     this.stockData.lastUpdated = now;
@@ -306,54 +318,77 @@ class StockManager {
     this.saveStockData();
     
     // Send notifications (only for new/changed items)
-    this.sendNotifications(stockId, category, items, weather);
+    this.sendNotifications(stockId, category, items, weather, travellingMerchant, merchantName);
     
     console.log(`✅ Updated stock data from ${source} for ${category}`);
   }
 
-  private shouldAcceptUpdate(source: string, category: string, isWeatherUpdate: boolean = false): boolean {
+  private shouldAcceptUpdate(source: string, category: string, isWeatherUpdate: boolean = false, travellingMerchant?: TravellingMerchantItem[]): boolean {
     const sourceConfig = this.SOURCE_PRIORITY[source as keyof typeof this.SOURCE_PRIORITY];
     const now = Date.now();
+    
+    console.log(`🔍 Checking if should accept ${source} update for ${category}`);
+    console.log(`🔍 Is weather update: ${isWeatherUpdate}`);
+    console.log(`🔍 Has travelling merchant: ${travellingMerchant ? travellingMerchant.length : 0} items`);
     
     // Special handling for weather updates - they should be treated as their own category
     if (isWeatherUpdate) {
       // For weather updates, always accept them regardless of timing
       // Weather updates are important and should override timing restrictions
+      console.log(`🔍 Accepting weather update from ${source}`);
       return true;
-    } else {
-      // Normal category handling
-      const currentCategory = this.stockData[category as keyof AllStockData];
-      
-      if (!currentCategory || typeof currentCategory !== 'object' || !('lastUpdated' in currentCategory)) {
-        return true; // No existing data, accept any update
-      }
-      
-      const currentLastUpdated = (currentCategory as StockCategory).lastUpdated;
-      const currentTime = new Date(currentLastUpdated).getTime();
-      const timeSinceLastUpdate = now - currentTime;
-      const minUpdateInterval = sourceConfig.minUpdateIntervalMinutes * 60 * 1000;
-      
-      // Check if enough time has passed since last update
-      if (timeSinceLastUpdate < minUpdateInterval) {
-        return false;
-      }
+    }
+    
+    // Special handling for travelling merchant updates - always accept them regardless of timing
+    if (travellingMerchant && travellingMerchant.length > 0) {
+      // For travelling merchant updates, always accept them regardless of timing
+      // Travelling merchant updates are important and should override timing restrictions
+      console.log(`🔍 Accepting travelling merchant update from ${source}`);
+      return true;
+    }
+    
+    // Normal category handling
+    const currentCategory = this.stockData[category as keyof AllStockData];
+    
+    if (!currentCategory || typeof currentCategory !== 'object' || !('lastUpdated' in currentCategory)) {
+      console.log(`🔍 Accepting ${source} update for ${category} - no existing data`);
+      return true; // No existing data, accept any update
+    }
+    
+    const currentLastUpdated = (currentCategory as StockCategory).lastUpdated;
+    const currentTime = new Date(currentLastUpdated).getTime();
+    const timeSinceLastUpdate = now - currentTime;
+    const minUpdateInterval = sourceConfig.minUpdateIntervalMinutes * 60 * 1000;
+    
+    console.log(`🔍 Time since last update: ${timeSinceLastUpdate}ms, min interval: ${minUpdateInterval}ms`);
+    
+    // Check if enough time has passed since last update
+    if (timeSinceLastUpdate < minUpdateInterval) {
+      console.log(`🔍 Rejecting ${source} update for ${category} - too soon since last update`);
+      return false;
     }
     
     // Check if a higher priority source has updated recently
     for (const [sourceName, sourceInfo] of this.sources) {
       const sourcePriority = this.SOURCE_PRIORITY[sourceName as keyof typeof this.SOURCE_PRIORITY];
+      // Check if this source has higher priority (lower number) than the current source
       if (sourcePriority.priority < sourceConfig.priority) {
         const lastUpdate = new Date(sourceInfo.lastSuccessfulUpdate).getTime();
         const timeSinceHigherPriorityUpdate = now - lastUpdate;
         const higherPriorityThreshold = sourcePriority.maxDelayMinutes * 60 * 1000;
         
+        console.log(`🔍 Checking ${sourceName} (priority ${sourcePriority.priority}) vs ${source} (priority ${sourceConfig.priority})`);
+        console.log(`🔍 Time since ${sourceName} update: ${timeSinceHigherPriorityUpdate}ms, threshold: ${higherPriorityThreshold}ms`);
+        
         // If higher priority source updated recently, don't accept lower priority
         if (timeSinceHigherPriorityUpdate < higherPriorityThreshold) {
+          console.log(`🔍 Rejecting ${source} update for ${category} - higher priority source ${sourceName} updated recently`);
           return false;
         }
       }
     }
     
+    console.log(`🔍 Accepting ${source} update for ${category}`);
     return true;
   }
 
@@ -368,6 +403,11 @@ class StockManager {
     
     // Special handling for weather updates - always accept new weather data
     if (category === 'seeds' && dataHash.includes('weather')) {
+      return true;
+    }
+    
+    // Special handling for travelling merchant updates - always accept new travelling merchant data
+    if (dataHash.includes('travellingMerchant')) {
       return true;
     }
     
@@ -387,11 +427,15 @@ class StockManager {
     return true;
   }
 
-  private createDataHash(category: string, items: StockItem[], weather?: WeatherInfo): string {
+  private createDataHash(category: string, items: StockItem[], weather?: WeatherInfo, travellingMerchant?: TravellingMerchantItem[], merchantName?: string): string {
     const data = {
       category,
       items: items.map(item => `${item.id}:${item.quantity}`).sort().join(','),
-      weather: weather ? `${weather.current}:${weather.endsAt}` : ''
+      weather: weather ? `${weather.current}:${weather.endsAt}` : '',
+      travellingMerchant: travellingMerchant ? {
+        merchantName,
+        items: travellingMerchant.map(item => `${item.id}:${item.quantity}`).sort().join(',')
+      } : ''
     };
     
     return JSON.stringify(data);
@@ -401,11 +445,23 @@ class StockManager {
     stockId: string,
     category: string,
     items: StockItem[],
-    weather?: WeatherInfo
+    weather?: WeatherInfo,
+    travellingMerchant?: TravellingMerchantItem[],
+    merchantName?: string
   ) {
+    console.log(`🔔 Starting notification process for category: ${category}`);
+    console.log(`🔔 Items to notify for: ${items.length}`);
+    console.log(`🔔 Weather to notify for: ${weather ? weather.current : 'none'}`);
+    console.log(`🔔 Travelling merchant to notify for: ${travellingMerchant ? travellingMerchant.length : 0} items`);
+    
     // Send weather notifications
     if (weather) {
       await sendWeatherAlertNotification(weather.current, `Ends: ${weather.endsAt}`);
+    }
+    
+    // Send travelling merchant notifications
+    if (travellingMerchant && travellingMerchant.length > 0) {
+      await sendCategoryNotification('Travelling Merchant', 'Travelling Merchant', `The ${merchantName || 'travelling'} merchant has arrived with new items!`);
     }
     
     // Send notifications based on category type
@@ -413,9 +469,11 @@ class StockManager {
       case 'seeds':
       case 'gear':
       case 'eggs':
+        console.log(`🔔 Processing ${category} notifications for ${items.length} items`);
         // Per-item notifications for these categories
         for (const item of items) {
           const shouldNotify = this.shouldNotifyForItem();
+          console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
           if (shouldNotify) {
             await sendItemNotification(item.name, item.quantity, category);
           }
@@ -426,13 +484,6 @@ class StockManager {
         // Category-level notification for cosmetics
         if (items.length > 0) {
           await sendCategoryNotification('Cosmetics', 'Cosmetics', 'New cosmetic items are available in the shop!');
-        }
-        break;
-        
-      case 'travellingMerchant':
-        // Category-level notification for travelling merchant
-        if (items.length > 0) {
-          await sendCategoryNotification('Travelling Merchant', 'Travelling Merchant', 'The travelling merchant has arrived with new items!');
         }
         break;
         
@@ -447,6 +498,8 @@ class StockManager {
         console.log(`⚠️ Unknown category for notifications: ${category}`);
         break;
     }
+    
+    console.log(`🔔 Notification process completed for category: ${category}`);
   }
 
   private shouldNotifyForItem(): boolean {
