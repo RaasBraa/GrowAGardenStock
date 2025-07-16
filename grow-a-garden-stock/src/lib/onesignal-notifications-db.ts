@@ -123,7 +123,8 @@ async function sendOneSignalNotification(
     headings: { en: title },
     contents: { en: message },
     data: data || {},
-    android_channel_id: 'stock-updates',
+    // Use environment variable for channel ID or fallback to default
+    android_channel_id: process.env.ONESIGNAL_ANDROID_CHANNEL_ID || 'default',
     ios_sound: 'default',
     android_sound: 'default'
   };

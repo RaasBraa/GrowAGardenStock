@@ -435,25 +435,26 @@ class StockManager {
       return true;
     }
     
-    // Check if this source is more recent than our current data
+    // Check if enough time has passed since the last update for this category
     const currentCategory = this.stockData[category as keyof AllStockData];
     if (currentCategory && typeof currentCategory === 'object' && 'lastUpdated' in currentCategory) {
       const currentLastUpdated = (currentCategory as StockCategory).lastUpdated;
       const currentTime = new Date(currentLastUpdated).getTime();
-      const sourceTime = new Date(sourceInfo.lastUpdate).getTime();
+      const now = Date.now();
+      const timeSinceLastUpdate = now - currentTime;
+      const minInterval = 60000; // 1 minute minimum interval
       
       console.log(`🔍 Current category last updated: ${currentLastUpdated}`);
-      console.log(`🔍 Source last update: ${sourceInfo.lastUpdate}`);
-      console.log(`🔍 Current time: ${currentTime}, source time: ${sourceTime}`);
+      console.log(`🔍 Time since last update: ${timeSinceLastUpdate}ms, min interval: ${minInterval}ms`);
       
-      // Only update if source data is newer
-      if (sourceTime <= currentTime) {
-        console.log(`🔍 Rejecting ${source} update for ${category} - source data not newer`);
+      // Only update if enough time has passed since last update
+      if (timeSinceLastUpdate < minInterval) {
+        console.log(`🔍 Rejecting ${source} update for ${category} - too soon since last update`);
         return false;
       }
     }
     
-    console.log(`🔍 Accepting ${source} update for ${category} - data is newer`);
+    console.log(`🔍 Accepting ${source} update for ${category} - enough time has passed`);
     return true;
   }
 
