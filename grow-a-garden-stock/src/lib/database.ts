@@ -20,19 +20,43 @@ export interface PushTokenEntry {
 
 class Database {
   private db: sqlite3.Database | null = null;
+  private initializationPromise: Promise<void> | null = null;
 
   async initialize(): Promise<void> {
+    // If already initialized, return immediately
+    if (this.db) {
+      return Promise.resolve();
+    }
+
+    // If initialization is in progress, wait for it
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    // Start initialization
+    this.initializationPromise = this._initialize();
+    return this.initializationPromise;
+  }
+
+  private async _initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db = new sqlite3.Database(DB_PATH, (err) => {
         if (err) {
           console.error('Error opening database:', err);
+          this.initializationPromise = null;
           reject(err);
           return;
         }
         
         this.createTables()
-          .then(() => resolve())
-          .catch(reject);
+          .then(() => {
+            console.log('✅ Database initialized successfully');
+            resolve();
+          })
+          .catch((error) => {
+            this.initializationPromise = null;
+            reject(error);
+          });
       });
     });
   }
@@ -66,7 +90,6 @@ class Database {
           reject(err);
           return;
         }
-        console.log('✅ Database initialized successfully');
         resolve();
       });
     });

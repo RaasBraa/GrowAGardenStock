@@ -228,6 +228,9 @@ async function handleOneSignalError(error: string, playerId: string): Promise<vo
 
 export async function sendItemNotification(itemName: string, quantity: number, category: string) {
   try {
+    // Initialize database if needed
+    await database.initialize();
+    
     // Clean up expired tokens
     await database.cleanupExpiredTokens();
     
@@ -288,6 +291,9 @@ export async function sendItemNotification(itemName: string, quantity: number, c
 
 export async function sendRareItemNotification(itemName: string, rarity: string, quantity: number, channel?: string) {
   try {
+    // Initialize database if needed
+    await database.initialize();
+    
     await database.cleanupExpiredTokens();
     
     const interestedTokens = await database.getTokensForItem(itemName);
@@ -344,6 +350,9 @@ export async function sendRareItemNotification(itemName: string, rarity: string,
 
 export async function sendWeatherAlertNotification(weatherType: string, description: string) {
   try {
+    // Initialize database if needed
+    await database.initialize();
+    
     await database.cleanupExpiredTokens();
     
     const interestedTokens = await database.getTokensForWeather();
@@ -402,6 +411,9 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
 
 export async function sendCategoryNotification(categoryName: string, categoryDisplayName: string, description: string) {
   try {
+    // Initialize database if needed
+    await database.initialize();
+    
     await database.cleanupExpiredTokens();
     
     const interestedTokens = await database.getTokensForCategory(categoryName);
@@ -466,6 +478,9 @@ export async function sendCategoryNotification(categoryName: string, categoryDis
 
 export async function getTokenStats() {
   try {
+    // Initialize database if needed
+    await database.initialize();
+    
     const stats = await database.getStats();
     return {
       total: stats.total,
