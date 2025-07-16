@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
+import database from '../../../lib/database';
 
 const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');
 
@@ -99,6 +100,11 @@ function mergePreferences(existingPreferences: { [itemName: string]: boolean } |
   return { ...existingPreferences, ...newPreferences };
 }
 
+// Helper function to determine if token is OneSignal
+function isOneSignalToken(token: string, onesignal_player_id?: string): boolean {
+  return token.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/) !== null || !!onesignal_player_id;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body: RegisterRequest = await req.json();
@@ -116,7 +122,81 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Load existing tokens
+    // Determine if this is a OneSignal token
+    const isOneSignal = isOneSignalToken(token, onesignal_player_id);
+    
+    if (isOneSignal) {
+      // Use database for OneSignal tokens
+      try {
+        await database.initialize();
+        
+        // Check if token already exists in database
+        const existingTokens = await database.getTokens();
+        const existingToken = existingTokens.find(t => t.token === token);
+        
+        if (existingToken) {
+          // Update existing token
+          const updates: any = {
+            last_used: new Date().toISOString(),
+            is_active: true, // Reactivate if it was inactive
+            failure_count: 0, // Reset failure count
+            last_failure: undefined // Clear last failure
+          };
+          
+          if (device_type) updates.device_type = device_type;
+          if (app_version) updates.app_version = app_version;
+          if (onesignal_player_id) updates.onesignal_player_id = onesignal_player_id;
+          
+          // Merge preferences
+          if (preferences) {
+            const existingPrefs = existingToken.preferences ? JSON.parse(existingToken.preferences) : {};
+            const mergedPrefs = mergePreferences(existingPrefs, preferences);
+            updates.preferences = JSON.stringify(mergedPrefs);
+          }
+          
+          await database.updateToken(token, updates);
+          
+          console.log(`🔄 Updated existing OneSignal token in database: ${token.substring(0, 20)}...`);
+          
+          return NextResponse.json({ 
+            message: 'OneSignal token updated successfully',
+            action: 'updated',
+            storage: 'database',
+            preferences: preferences ? JSON.parse(updates.preferences) : existingToken.preferences ? JSON.parse(existingToken.preferences) : {}
+          });
+        } else {
+          // Add new OneSignal token to database
+          const newToken = {
+            token,
+            created_at: new Date().toISOString(),
+            last_used: new Date().toISOString(),
+            is_active: true,
+            device_type,
+            app_version,
+            preferences: preferences ? JSON.stringify(preferences) : undefined,
+            onesignal_player_id,
+            failure_count: 0
+          };
+          
+          await database.insertToken(newToken);
+          
+          console.log(`✅ Registered new OneSignal token in database: ${token.substring(0, 20)}...`);
+          
+          return NextResponse.json({ 
+            message: 'OneSignal token registered successfully',
+            action: 'registered',
+            storage: 'database',
+            preferences: preferences || {}
+          });
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Fallback to JSON if database fails
+        console.log('🔄 Falling back to JSON storage for OneSignal token');
+      }
+    }
+    
+    // Use JSON for Expo tokens (backward compatibility)
     const tokens = loadTokens();
     
     // Check if token already exists
@@ -159,6 +239,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         message: 'Token updated successfully',
         action: 'updated',
+        storage: 'json',
         preferences: existingToken.preferences
       });
     }
@@ -185,6 +266,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       message: 'Token registered successfully',
       action: 'registered',
+      storage: 'json',
       totalTokens: tokens.length,
       preferences: newToken.preferences
     });
