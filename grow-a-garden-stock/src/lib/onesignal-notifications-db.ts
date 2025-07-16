@@ -117,17 +117,20 @@ async function sendOneSignalNotification(
   // Respect rate limits
   await respectRateLimit();
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     app_id: ONESIGNAL_APP_ID,
     include_player_ids: playerIds,
     headings: { en: title },
     contents: { en: message },
     data: data || {},
-    // Use environment variable for channel ID or fallback to default
-    android_channel_id: process.env.ONESIGNAL_ANDROID_CHANNEL_ID || 'default',
     ios_sound: 'default',
     android_sound: 'default'
   };
+
+  // Only add android_channel_id if explicitly configured
+  if (process.env.ONESIGNAL_ANDROID_CHANNEL_ID) {
+    payload.android_channel_id = process.env.ONESIGNAL_ANDROID_CHANNEL_ID;
+  }
 
   try {
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
@@ -198,7 +201,7 @@ async function handleOneSignalError(error: string, playerId: string): Promise<vo
       let failureCount = tokenEntry.failure_count || 0;
       failureCount++;
       
-      const updates: any = {
+      const updates: Record<string, unknown> = {
         failure_count: failureCount,
         last_failure: new Date().toISOString()
       };
