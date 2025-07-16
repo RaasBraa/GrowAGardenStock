@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getTokenStats } from '../../../lib/pushNotifications';
+import { getTokenStats } from '@/lib/pushNotifications';
+import database from '@/lib/database';
 
 const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');
 
@@ -15,6 +16,7 @@ interface PushTokenEntry {
   user_agent?: string;
   ip_address?: string;
   onesignal_player_id?: string; // OneSignal player ID
+  preferences?: string; // JSON string for database tokens
 }
 
 interface TokenResponse {
@@ -26,6 +28,7 @@ interface TokenResponse {
   app_version?: string;
   ip_address?: string;
   onesignal_player_id?: string; // OneSignal player ID
+  storage: 'database' | 'json';
 }
 
 interface PaginationInfo {
@@ -60,7 +63,34 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     
-    const tokens = loadTokens();
+    // Load tokens from both sources
+    const jsonTokens = loadTokens();
+    let dbTokens: PushTokenEntry[] = [];
+    
+    try {
+      await database.initialize();
+      const dbTokenData = await database.getTokens();
+      dbTokens = dbTokenData.map(t => ({
+        token: t.token,
+        created_at: t.created_at,
+        last_used: t.last_used,
+        is_active: t.is_active,
+        device_type: t.device_type,
+        app_version: t.app_version,
+        onesignal_player_id: t.onesignal_player_id,
+        preferences: t.preferences
+      }));
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      // Continue with JSON tokens only
+    }
+    
+    // Combine tokens from both sources
+    const allTokens = [
+      ...jsonTokens.map(t => ({ ...t, storage: 'json' as const })),
+      ...dbTokens.map(t => ({ ...t, storage: 'database' as const }))
+    ];
+    
     const stats = getTokenStats();
     
     // Prepare response
@@ -71,7 +101,7 @@ export async function GET(req: NextRequest) {
     
     if (includeTokens) {
       // Return paginated tokens with sensitive data removed
-      const paginatedTokens: TokenResponse[] = tokens
+      const paginatedTokens: TokenResponse[] = allTokens
         .slice(offset, offset + limit)
         .map(token => ({
           id: token.token.substring(0, 20) + '...',
@@ -81,15 +111,16 @@ export async function GET(req: NextRequest) {
           device_type: token.device_type,
           app_version: token.app_version,
           ip_address: token.ip_address,
-          onesignal_player_id: token.onesignal_player_id
+          onesignal_player_id: token.onesignal_player_id,
+          storage: token.storage
         }));
       
       response.tokens = paginatedTokens;
       response.pagination = {
         limit,
         offset,
-        total: tokens.length,
-        has_more: offset + limit < tokens.length
+        total: allTokens.length,
+        has_more: offset + limit < allTokens.length
       };
     }
     
@@ -119,6 +150,7 @@ export async function DELETE(req: NextRequest) {
     
     const tokens = loadTokens();
     let removedCount = 0;
+    let dbRemovedCount = 0;
     
     switch (action) {
       case 'cleanup_expired':
@@ -132,7 +164,31 @@ export async function DELETE(req: NextRequest) {
         
         if (removedCount > 0) {
           fs.writeFileSync(TOKENS_PATH, JSON.stringify(validTokens, null, 2));
-          console.log(`🧹 Bulk cleanup: Removed ${removedCount} expired tokens`);
+          console.log(`🧹 Bulk cleanup: Removed ${removedCount} expired JSON tokens`);
+        }
+        
+        // Clean up database tokens
+        try {
+          await database.initialize();
+          const dbTokens = await database.getTokens();
+          const validDbTokens = dbTokens.filter(t => {
+            const lastUsed = new Date(t.last_used);
+            return lastUsed > thirtyDaysAgo && t.is_active;
+          });
+          dbRemovedCount = dbTokens.length - validDbTokens.length;
+          
+          if (dbRemovedCount > 0) {
+            // Remove expired tokens from database
+            for (const token of dbTokens) {
+              const lastUsed = new Date(token.last_used);
+              if (lastUsed <= thirtyDaysAgo || !token.is_active) {
+                await database.deleteToken(token.token);
+              }
+            }
+            console.log(`🧹 Bulk cleanup: Removed ${dbRemovedCount} expired database tokens`);
+          }
+        } catch (dbError) {
+          console.error('Database cleanup error:', dbError);
         }
         break;
         
@@ -143,7 +199,27 @@ export async function DELETE(req: NextRequest) {
         
         if (removedCount > 0) {
           fs.writeFileSync(TOKENS_PATH, JSON.stringify(activeTokens, null, 2));
-          console.log(`🧹 Bulk cleanup: Removed ${removedCount} inactive tokens`);
+          console.log(`🧹 Bulk cleanup: Removed ${removedCount} inactive JSON tokens`);
+        }
+        
+        // Clean up inactive database tokens
+        try {
+          await database.initialize();
+          const dbTokens = await database.getTokens();
+          const activeDbTokens = dbTokens.filter(t => t.is_active);
+          dbRemovedCount = dbTokens.length - activeDbTokens.length;
+          
+          if (dbRemovedCount > 0) {
+            // Remove inactive tokens from database
+            for (const token of dbTokens) {
+              if (!token.is_active) {
+                await database.deleteToken(token.token);
+              }
+            }
+            console.log(`🧹 Bulk cleanup: Removed ${dbRemovedCount} inactive database tokens`);
+          }
+        } catch (dbError) {
+          console.error('Database cleanup error:', dbError);
         }
         break;
         
@@ -151,7 +227,24 @@ export async function DELETE(req: NextRequest) {
         // Remove all tokens (use with caution!)
         removedCount = tokens.length;
         fs.writeFileSync(TOKENS_PATH, JSON.stringify([], null, 2));
-        console.log(`🧹 Bulk cleanup: Removed all ${removedCount} tokens`);
+        console.log(`🧹 Bulk cleanup: Removed all ${removedCount} JSON tokens`);
+        
+        // Clean up all database tokens
+        try {
+          await database.initialize();
+          const dbTokens = await database.getTokens();
+          dbRemovedCount = dbTokens.length;
+          
+          if (dbRemovedCount > 0) {
+            // Remove all tokens from database
+            for (const token of dbTokens) {
+              await database.deleteToken(token.token);
+            }
+            console.log(`🧹 Bulk cleanup: Removed all ${dbRemovedCount} database tokens`);
+          }
+        } catch (dbError) {
+          console.error('Database cleanup error:', dbError);
+        }
         break;
         
       default:
@@ -166,7 +259,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({
       message: `Bulk cleanup completed`,
       action,
-      removedCount,
+      removedCount: removedCount + dbRemovedCount,
+      jsonRemoved: removedCount,
+      databaseRemoved: dbRemovedCount,
       stats: updatedStats
     });
     

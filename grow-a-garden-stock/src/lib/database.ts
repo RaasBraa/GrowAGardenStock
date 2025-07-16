@@ -202,6 +202,26 @@ class Database {
     });
   }
 
+  async deleteToken(token: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+
+      const sql = 'DELETE FROM push_tokens WHERE token = ?';
+
+      this.db!.run(sql, [token], (err) => {
+        if (err) {
+          console.error('Error deleting token:', err);
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
   async getTokens(filters?: {
     is_active?: boolean;
     device_type?: 'expo' | 'onesignal';

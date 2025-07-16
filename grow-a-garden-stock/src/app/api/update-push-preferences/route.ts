@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Expo } from 'expo-server-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
+import database from '@/lib/database';
 
 const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');
 
@@ -15,6 +16,9 @@ interface PushTokenEntry {
   user_agent?: string;
   ip_address?: string;
   preferences?: { [itemName: string]: boolean };
+  onesignal_player_id?: string;
+  failure_count?: number;
+  last_failure?: string;
 }
 
 interface UpdatePreferencesRequest {
@@ -51,8 +55,14 @@ function validateToken(token: string): { isValid: boolean; error?: string } {
     return { isValid: true };
   }
 
+  // Check if it's a OneSignal token (UUID format)
+  if (token.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    return { isValid: true };
+  }
+
+  // Check if it's an Expo token
   if (!Expo.isExpoPushToken(token)) {
-    return { isValid: false, error: 'Invalid Expo push token format' };
+    return { isValid: false, error: 'Invalid push token format' };
   }
 
   return { isValid: true };
@@ -71,6 +81,11 @@ function validatePreferences(preferences: Record<string, unknown>): { isValid: b
   }
   
   return { isValid: true };
+}
+
+// Helper function to determine if token is OneSignal
+function isOneSignalToken(token: string): boolean {
+  return token.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) !== null;
 }
 
 export async function POST(req: NextRequest) {
@@ -102,10 +117,61 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Load existing tokens
-    const tokens = loadTokens();
+    // Determine if this is a OneSignal token
+    const isOneSignal = isOneSignalToken(token);
     
-    // Find the token to update
+    if (isOneSignal) {
+      // Check database for OneSignal tokens
+      try {
+        await database.initialize();
+        
+        const existingTokens = await database.getTokens();
+        const existingToken = existingTokens.find(t => t.token === token);
+        
+        if (existingToken) {
+          // Update preferences in database
+          const updates = {
+            preferences: JSON.stringify(preferences),
+            last_used: new Date().toISOString(),
+            is_active: true // Reactivate if it was inactive
+          };
+          
+          await database.updateToken(token, updates);
+          
+          console.log(`⚙️ Updated preferences for OneSignal token: ${token.substring(0, 20)}...`);
+          console.log(`   Enabled items: ${Object.keys(preferences).filter(k => preferences[k]).length}`);
+          console.log(`   Disabled items: ${Object.keys(preferences).filter(k => !preferences[k]).length}`);
+          
+          return NextResponse.json({ 
+            message: 'OneSignal preferences updated successfully',
+            action: 'updated',
+            storage: 'database',
+            enabledItems: Object.keys(preferences).filter(k => preferences[k]),
+            disabledItems: Object.keys(preferences).filter(k => !preferences[k])
+          });
+        } else {
+          return NextResponse.json(
+            { 
+              error: 'Token not found',
+              message: 'The specified OneSignal token was not found in our database'
+            }, 
+            { status: 404 }
+          );
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        return NextResponse.json(
+          { 
+            error: 'Database error',
+            message: 'Failed to update preferences due to database error'
+          }, 
+          { status: 500 }
+        );
+      }
+    }
+    
+    // Check JSON file for Expo tokens
+    const tokens = loadTokens();
     const tokenEntry = tokens.find(t => t.token === token);
     
     if (!tokenEntry) {
@@ -124,13 +190,14 @@ export async function POST(req: NextRequest) {
     
     saveTokens(tokens);
     
-    console.log(`⚙️ Updated preferences for token: ${token.substring(0, 20)}...`);
+    console.log(`⚙️ Updated preferences for Expo token: ${token.substring(0, 20)}...`);
     console.log(`   Enabled items: ${Object.keys(preferences).filter(k => preferences[k]).length}`);
     console.log(`   Disabled items: ${Object.keys(preferences).filter(k => !preferences[k]).length}`);
     
     return NextResponse.json({ 
-      message: 'Preferences updated successfully',
+      message: 'Expo preferences updated successfully',
       action: 'updated',
+      storage: 'json',
       enabledItems: Object.keys(preferences).filter(k => preferences[k]),
       disabledItems: Object.keys(preferences).filter(k => !preferences[k])
     });
@@ -177,10 +244,47 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    // Load existing tokens
-    const tokens = loadTokens();
+    // Determine if this is a OneSignal token
+    const isOneSignal = isOneSignalToken(token);
     
-    // Find the token
+    if (isOneSignal) {
+      // Check database for OneSignal tokens
+      try {
+        await database.initialize();
+        
+        const existingTokens = await database.getTokens();
+        const existingToken = existingTokens.find(t => t.token === token);
+        
+        if (existingToken) {
+          const preferences = existingToken.preferences ? JSON.parse(existingToken.preferences) : {};
+          return NextResponse.json({ 
+            preferences,
+            lastUpdated: existingToken.last_used,
+            storage: 'database'
+          });
+        } else {
+          return NextResponse.json(
+            { 
+              error: 'Token not found',
+              message: 'The specified OneSignal token was not found in our database'
+            }, 
+            { status: 404 }
+          );
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        return NextResponse.json(
+          { 
+            error: 'Database error',
+            message: 'Failed to retrieve preferences due to database error'
+          }, 
+          { status: 500 }
+        );
+      }
+    }
+    
+    // Check JSON file for Expo tokens
+    const tokens = loadTokens();
     const tokenEntry = tokens.find(t => t.token === token);
     
     if (!tokenEntry) {
@@ -195,7 +299,8 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json({ 
       preferences: tokenEntry.preferences || {},
-      lastUpdated: tokenEntry.last_used
+      lastUpdated: tokenEntry.last_used,
+      storage: 'json'
     });
     
   } catch (error) {
