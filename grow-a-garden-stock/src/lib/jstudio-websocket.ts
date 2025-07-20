@@ -201,15 +201,34 @@ class JStudioWebSocketListener {
       
       // Process travelling merchant (separate from eventshop)
       if (stockData.travelingmerchant_stock && stockData.travelingmerchant_stock.stock && stockData.travelingmerchant_stock.stock.length >= 0) {
-        const travellingMerchant: TravellingMerchantItem[] = stockData.travelingmerchant_stock.stock.map(item => ({
-          id: item.item_id,
-          name: item.display_name,
-          quantity: item.quantity
-        }));
-        console.log('🛒 Travelling Merchant items:', travellingMerchant);
-        console.log('👤 Merchant Name:', stockData.travelingmerchant_stock.merchantName);
-        // Update travelling merchant data through stock manager
-        stockManager.updateStockData('websocket', 'seeds', [], undefined, travellingMerchant, stockData.travelingmerchant_stock.merchantName);
+        const now = Date.now() / 1000; // Current time in seconds
+        const merchantStock = stockData.travelingmerchant_stock.stock;
+        
+        // Check if any items have passed their end date
+        const activeItems = merchantStock.filter(item => {
+          const hasEnded = item.end_date_unix && now > item.end_date_unix;
+          if (hasEnded) {
+            console.log(`🛒 Item ${item.display_name} has ended (end time: ${new Date(item.end_date_unix * 1000).toISOString()})`);
+          }
+          return !hasEnded;
+        });
+        
+        if (activeItems.length > 0) {
+          // Merchant is still active with some items
+          const travellingMerchant: TravellingMerchantItem[] = activeItems.map(item => ({
+            id: item.item_id,
+            name: item.display_name,
+            quantity: item.quantity
+          }));
+          console.log('🛒 Travelling Merchant items (active):', travellingMerchant);
+          console.log('👤 Merchant Name:', stockData.travelingmerchant_stock.merchantName);
+          // Update travelling merchant data through stock manager
+          stockManager.updateStockData('websocket', 'seeds', [], undefined, travellingMerchant, stockData.travelingmerchant_stock.merchantName);
+        } else {
+          // All items have ended, merchant has left
+          console.log('🛒 All travelling merchant items have ended - merchant has left');
+          stockManager.updateStockData('websocket', 'seeds', [], undefined, [], stockData.travelingmerchant_stock.merchantName);
+        }
       }
       
       console.log('✅ WebSocket stock update processed successfully');

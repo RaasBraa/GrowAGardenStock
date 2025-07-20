@@ -113,6 +113,13 @@ export async function GET() {
       items: [],
       notificationType: "general", // General weather notifications
       defaultEnabled: true
+    },
+    events: {
+      name: "Events",
+      description: "Event shop items (single notification per restock)",
+      items: [],
+      notificationType: "category", // Single notification for entire category
+      defaultEnabled: true
     }
   };
 

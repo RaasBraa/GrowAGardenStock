@@ -65,6 +65,7 @@ const categoryAssets = {
   'Gear': { emoji: '🛠️', title: 'Gear Stock Update' },
   'Eggs': { emoji: '🥚', title: 'Egg Stock Update' },
   'Cosmetics': { emoji: '✨', title: 'Cosmetic Stock Update' },
+  'Events': { emoji: '🎉', title: 'Event Stock Update' },
   'Default': { emoji: '🛒', title: 'Item in Stock!' }
 }
 
@@ -439,6 +440,7 @@ export async function sendCategoryNotification(categoryName: string, categoryDis
     const categoryAssets = {
       'Cosmetics': { emoji: '✨', title: 'Cosmetics Available!' },
       'Travelling Merchant': { emoji: '🛒', title: 'Travelling Merchant Arrived!' },
+      'Events': { emoji: '🎉', title: 'Event Items Available!' },
       'Default': { emoji: '📢', title: 'New Items Available!' }
     };
 

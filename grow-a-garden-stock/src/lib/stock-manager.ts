@@ -178,27 +178,39 @@ class StockManager {
   public async start() {
     console.log('🚀 Starting Stock Manager with multi-source coordination...');
     
-    // Start JStudio WebSocket (primary source)
+    // Start WebSocket listener
     console.log('📡 Starting JStudio WebSocket listener...');
-    await jstudioWebSocket.start();
-    this.updateSourceStatus('websocket', true);
+    jstudioWebSocket.start();
     
-    // Start Cactus Discord (backup 1)
+    // Start Discord listeners
     console.log('🌵 Starting Cactus Discord listener...');
     initializeCactusDiscord();
-    this.updateSourceStatus('cactus', true);
     
-    // Start Vulcan Discord (backup 2)
     console.log('🔥 Starting Vulcan Discord listener...');
     initializeVulcanDiscord();
-    this.updateSourceStatus('vulcan', true);
     
-    // Set up periodic validation - every 2 minutes instead of 30 seconds
-    setInterval(() => this.validateDataConsistency(), 120000);
+    // Set up periodic checks
+    setInterval(() => {
+      this.validateDataConsistency();
+      this.checkAndClearExpiredTravellingMerchant();
+    }, 30000); // Check every 30 seconds
     
     console.log('✅ Stock Manager started successfully!');
-    console.log('📊 Multi-source coordination active');
-    console.log('🔍 Data validation and source prioritization enabled');
+    console.log('📊 Multi-source coordination is now active');
+    console.log('🌐 API endpoint: http://103.45.246.244:3000/api/stock');
+    console.log('💡 The Stock Manager will automatically:');
+    console.log('   • Prioritize JStudio WebSocket as primary source (99% uptime)');
+    console.log('   • Use Cactus Discord as backup 1 (faster updates)');
+    console.log('   • Use Vulcan Discord as backup 2 (last resort)');
+    console.log('   • Validate data consistency between sources');
+    console.log('   • Prevent duplicate notifications');
+    console.log('   • Handle travelling merchant updates');
+    console.log('   • Clear expired travelling merchant data');
+    console.log('   • Save data to stock-data.json');
+    console.log('   • Serve data via /api/stock endpoint');
+    console.log('   • Send push notifications to mobile app');
+    console.log('📱 Your mobile app will get instant updates!');
+    console.log('🔍 Data validation and source monitoring active');
   }
 
   public async updateStockData(
@@ -272,7 +284,7 @@ class StockManager {
     console.log(`💾 About to save travelling merchant data:`, travellingMerchant ? travellingMerchant.length : 0, 'items');
     
     // Update the stock data with stock IDs
-    if (category === 'seeds' || category === 'gear' || category === 'eggs' || category === 'cosmetics') {
+    if (category === 'seeds' || category === 'gear' || category === 'eggs' || category === 'cosmetics' || category === 'events') {
       // For weather-only updates, preserve existing items
       if (isWeatherUpdate) {
         console.log(`🌤️ Weather-only update: preserving existing ${category} items`);
@@ -333,6 +345,9 @@ class StockManager {
     
     // Save to file
     this.saveStockData();
+    
+    // Check for expired travelling merchant data
+    this.checkAndClearExpiredTravellingMerchant();
     
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather, travellingMerchant, merchantName);
@@ -627,6 +642,38 @@ class StockManager {
     if (sourceInfo) {
       sourceInfo.lastMessageReceived = new Date().toISOString();
       sourceInfo.isOnline = true;
+    }
+  }
+
+  private checkAndClearExpiredTravellingMerchant() {
+    if (!this.stockData.travellingMerchant || !this.stockData.travellingMerchant.isActive) {
+      return;
+    }
+
+    const now = Date.now() / 1000; // Current time in seconds
+    const merchant = this.stockData.travellingMerchant;
+    
+    // Check if any items have end dates that have passed
+    const hasExpiredItems = merchant.items.some(item => {
+      if (item.end_date_unix) {
+        const hasExpired = now > item.end_date_unix;
+        if (hasExpired) {
+          console.log(`🛒 Travelling merchant item ${item.name} has expired (end time: ${new Date(item.end_date_unix * 1000).toISOString()})`);
+        }
+        return hasExpired;
+      }
+      return false;
+    });
+
+    if (hasExpiredItems) {
+      console.log(`🛒 Clearing expired travelling merchant data`);
+      this.stockData.travellingMerchant = {
+        merchantName: 'No Merchant',
+        items: [],
+        lastUpdated: new Date().toISOString(),
+        isActive: false
+      };
+      this.saveStockData();
     }
   }
 }
