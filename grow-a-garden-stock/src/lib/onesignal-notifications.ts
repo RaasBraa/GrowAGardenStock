@@ -332,8 +332,8 @@ function getTokensForWeather(tokens: PushTokenEntry[]): PushTokenEntry[] {
   return tokens.filter(token => {
     // Only send notifications if user has explicitly enabled weather
     if (!token.preferences) return false; // No preferences = no notifications
-    // Check for both "Weather" and "Weather Alerts" preferences
-    return token.preferences["Weather"] === true || token.preferences["Weather Alerts"] === true;
+    // Check for the correct weather preference key (lowercase "weather")
+    return token.preferences["weather"] === true;
   });
 }
 

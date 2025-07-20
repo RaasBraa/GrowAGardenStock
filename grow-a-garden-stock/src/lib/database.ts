@@ -337,7 +337,7 @@ class Database {
       if (!token.preferences) return false;
       try {
         const prefs = JSON.parse(token.preferences);
-        return prefs["Weather"] === true || prefs["Weather Alerts"] === true;
+        return prefs["weather"] === true;
       } catch {
         return false;
       }
