@@ -346,7 +346,7 @@ class Database {
           return;
         }
 
-        const tokens: PushTokenEntry[] = rows.map((row: sqlite3.RowData) => ({
+        const tokens: PushTokenEntry[] = rows.map((row: any) => ({
           id: row.id,
           token: row.token,
           created_at: row.created_at,
