@@ -6,9 +6,9 @@ const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
 // OneSignal configuration based on official rate limits
 // https://documentation.onesignal.com/reference/rate-limits
 const ONESIGNAL_CONFIG = {
-  // Rate Limits (per minute)
-  RATE_LIMIT_PER_MINUTE: 300, // 300 requests per minute
-  RATE_LIMIT_DELAY: 200, // 200ms between requests (300 requests/min = 1 request/200ms)
+  // Rate Limits (per second) - OneSignal allows 150 requests/sec (free) or 6,000 requests/sec (paid)
+  RATE_LIMIT_PER_SECOND: 150, // Conservative: 150 requests per second (free tier)
+  RATE_LIMIT_DELAY: 10, // Minimal delay: 10ms between requests (100 requests/sec)
   
   // Retry Configuration
   MAX_RETRIES: 3,
@@ -21,7 +21,7 @@ const ONESIGNAL_CONFIG = {
   // Batch Configuration (OneSignal limits)
   MAX_PLAYER_IDS_PER_REQUEST: 2000, // OneSignal's limit per request
   BATCH_SIZE: 2000, // Send to 2000 users per API call
-  CONCURRENT_REQUESTS: 1, // Reduced to 1 to respect rate limits
+  CONCURRENT_REQUESTS: 5, // Increased to 5 concurrent requests for better performance
   
   // Rate limiting state
   lastRequestTime: 0,
@@ -73,22 +73,22 @@ const categoryAssets = {
 async function respectRateLimit(): Promise<void> {
   const now = Date.now();
   
-  // Reset counter if minute has passed
+  // Reset counter if second has passed
   if (now > ONESIGNAL_CONFIG.rateLimitResetTime) {
     ONESIGNAL_CONFIG.requestCount = 0;
-    ONESIGNAL_CONFIG.rateLimitResetTime = now + 60000; // Next minute
+    ONESIGNAL_CONFIG.rateLimitResetTime = now + 1000; // Next second
   }
   
   // Check if we're at the rate limit
-  if (ONESIGNAL_CONFIG.requestCount >= ONESIGNAL_CONFIG.RATE_LIMIT_PER_MINUTE) {
+  if (ONESIGNAL_CONFIG.requestCount >= ONESIGNAL_CONFIG.RATE_LIMIT_PER_SECOND) {
     const waitTime = ONESIGNAL_CONFIG.rateLimitResetTime - now;
-    console.log(`⚡ Rate limit reached (${ONESIGNAL_CONFIG.RATE_LIMIT_PER_MINUTE}/min), waiting ${waitTime}ms...`);
+    console.log(`⚡ Rate limit reached (${ONESIGNAL_CONFIG.RATE_LIMIT_PER_SECOND}/sec), waiting ${waitTime}ms...`);
     await new Promise(resolve => setTimeout(resolve, waitTime));
     ONESIGNAL_CONFIG.requestCount = 0;
-    ONESIGNAL_CONFIG.rateLimitResetTime = Date.now() + 60000;
+    ONESIGNAL_CONFIG.rateLimitResetTime = Date.now() + 1000;
   }
   
-  // Ensure minimum delay between requests
+  // Ensure minimum delay between requests (much shorter now)
   const timeSinceLastRequest = now - ONESIGNAL_CONFIG.lastRequestTime;
   if (timeSinceLastRequest < ONESIGNAL_CONFIG.RATE_LIMIT_DELAY) {
     const delay = ONESIGNAL_CONFIG.RATE_LIMIT_DELAY - timeSinceLastRequest;
