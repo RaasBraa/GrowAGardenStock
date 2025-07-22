@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import database from '../../../lib/database';
+import database from '../../../lib/database.js';
 
 const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');
 

@@ -1,4 +1,4 @@
-import database from './database';
+import database from './database.js';
 
 const ONESIGNAL_APP_ID = '7a3f0ef9-af93-4481-93e1-375183500d50';
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;

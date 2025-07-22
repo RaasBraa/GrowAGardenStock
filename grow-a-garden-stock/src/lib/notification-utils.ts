@@ -1,4 +1,4 @@
-import database from './database';
+import database from './database.js';
 
 // All available items for notifications
 export const ALL_ITEMS = {
