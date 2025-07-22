@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Expo } from 'expo-server-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 import database from '@/lib/database';
@@ -57,7 +56,7 @@ function validateToken(token: string): { isValid: boolean; error?: string } {
   }
 
   // Check if it's an Expo token
-  if (!Expo.isExpoPushToken(token)) {
+  if (!token.startsWith('ExponentPushToken[')) {
     return { isValid: false, error: 'Invalid push token format' };
   }
 

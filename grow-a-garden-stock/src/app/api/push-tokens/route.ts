@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getTokenStats } from '@/lib/notification-utils';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getTokenStats } from '@/lib/pushNotifications';
 import database from '@/lib/database';
 
 const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');

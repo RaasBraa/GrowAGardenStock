@@ -72,6 +72,19 @@ class StockManager {
   private previousStockData: AllStockData | null = null;
   private lastTravellingMerchantNotification: string | null = null; // Track last notification to prevent duplicates
   
+  // Rate limiting to prevent server overload
+  private lastUpdateTime: { [key: string]: number } = {};
+  private readonly MIN_UPDATE_INTERVAL = 2000; // 2 seconds between updates for same category
+  
+  // Background notification queue to prevent blocking
+  private notificationQueue: Array<() => Promise<void>> = [];
+  private isProcessingNotifications = false;
+  
+  // Validation logging control
+  private lastValidationLog: number | null = null;
+  private lastOnlineCount: number = 0;
+  private lastSaveLog: number | null = null;
+  
   // Timing configuration - much more reasonable timeouts
   private readonly REFRESH_INTERVALS = {
     seeds: 5,
@@ -193,7 +206,7 @@ class StockManager {
     setInterval(() => {
       this.validateDataConsistency();
       this.checkAndClearExpiredTravellingMerchant();
-    }, 30000); // Check every 30 seconds
+    }, 60000); // Check every 60 seconds instead of 30
     
     console.log('✅ Stock Manager started successfully!');
     console.log('📊 Multi-source coordination is now active');
@@ -221,7 +234,18 @@ class StockManager {
     travellingMerchant?: TravellingMerchantItem[],
     merchantName?: string
   ) {
-    const now = new Date().toISOString();
+    const now = Date.now();
+    const updateKey = `${source}-${category}`;
+    
+    // Rate limiting: prevent too frequent updates
+    if (this.lastUpdateTime[updateKey] && (now - this.lastUpdateTime[updateKey]) < this.MIN_UPDATE_INTERVAL) {
+      console.log(`⏭️ Rate limited: ${source} update for ${category} - too soon since last update`);
+      return;
+    }
+    
+    this.lastUpdateTime[updateKey] = now;
+    
+    const nowISO = new Date().toISOString();
     const sourceInfo = this.sources.get(source);
     
     if (!sourceInfo) {
@@ -230,7 +254,7 @@ class StockManager {
     }
 
     // Always update last message received timestamp
-    sourceInfo.lastMessageReceived = now;
+    sourceInfo.lastMessageReceived = nowISO;
     sourceInfo.isOnline = true;
 
     // Check if this is a weather-only update (empty items array with weather data)
@@ -254,8 +278,8 @@ class StockManager {
     }
 
     // Update source info for successful updates
-    sourceInfo.lastUpdate = now;
-    sourceInfo.lastSuccessfulUpdate = now;
+    sourceInfo.lastUpdate = nowISO;
+    sourceInfo.lastSuccessfulUpdate = nowISO;
     
     // Create data hash for comparison
     const dataHash = this.createDataHash(category, items, weather, travellingMerchant, merchantName);
@@ -289,11 +313,11 @@ class StockManager {
       if (isWeatherUpdate) {
         console.log(`🌤️ Weather-only update: preserving existing ${category} items`);
         // Don't update the category items, just update the timestamp
-        this.stockData[category].lastUpdated = now;
+        this.stockData[category].lastUpdated = nowISO;
       } else if (isTravellingMerchantUpdate) {
         console.log(`🛒 Travelling merchant update: preserving existing ${category} items`);
         // Don't update the category items, just update the timestamp
-        this.stockData[category].lastUpdated = now;
+        this.stockData[category].lastUpdated = nowISO;
       } else {
         // Normal update with new items
         const itemsWithStockId = items.map(item => ({
@@ -303,7 +327,7 @@ class StockManager {
         
         this.stockData[category] = {
           items: itemsWithStockId,
-          lastUpdated: now,
+          lastUpdated: nowISO,
           nextUpdate: this.calculateNextUpdate(this.REFRESH_INTERVALS[category]),
           refreshIntervalMinutes: this.REFRESH_INTERVALS[category],
           lastStockId: stockId
@@ -324,7 +348,7 @@ class StockManager {
         this.stockData.travellingMerchant = {
           merchantName: merchantName || 'Unknown Merchant',
           items: travellingMerchant,
-          lastUpdated: now,
+          lastUpdated: nowISO,
           isActive: true
         };
         console.log(`🛒 Travelling merchant data updated: ${merchantName || 'Unknown Merchant'} with ${travellingMerchant.length} items`);
@@ -334,13 +358,13 @@ class StockManager {
         this.stockData.travellingMerchant = {
           merchantName: 'No Merchant',
           items: [],
-          lastUpdated: now,
+          lastUpdated: nowISO,
           isActive: false
         };
       }
     }
     
-    this.stockData.lastUpdated = now;
+    this.stockData.lastUpdated = nowISO;
     sourceInfo.lastDataHash = dataHash;
     
     // Save to file
@@ -497,72 +521,106 @@ class StockManager {
     travellingMerchant?: TravellingMerchantItem[],
     merchantName?: string
   ) {
-    console.log(`🔔 Starting notification process for category: ${category}`);
-    console.log(`🔔 Items to notify for: ${items.length}`);
-    console.log(`🔔 Weather to notify for: ${weather ? weather.current : 'none'}`);
-    console.log(`🔔 Travelling merchant to notify for: ${travellingMerchant ? travellingMerchant.length : 0} items`);
+    console.log(`🔔 Queueing notifications for category: ${category}`);
     
-    // Send weather notifications
-    if (weather) {
-      await sendWeatherAlertNotification(weather.current, `Ends: ${weather.endsAt}`);
-    }
-    
-    // Send travelling merchant notifications (only when merchant arrives with items)
-    if (travellingMerchant && travellingMerchant.length > 0) {
-      // Create a unique identifier for this travelling merchant update
-      const merchantIdentifier = `${merchantName || 'Unknown'}-${travellingMerchant.map(item => `${item.id}:${item.quantity}`).sort().join(',')}`;
+    // Queue the notification task instead of sending immediately
+    this.notificationQueue.push(async () => {
+      console.log(`🔔 Processing queued notifications for category: ${category}`);
+      console.log(`🔔 Items to notify for: ${items.length}`);
+      console.log(`🔔 Weather to notify for: ${weather ? weather.current : 'none'}`);
+      console.log(`🔔 Travelling merchant to notify for: ${travellingMerchant ? travellingMerchant.length : 0} items`);
       
-      // Only send notification if we haven't already sent one for this exact merchant with these exact items
-      if (this.lastTravellingMerchantNotification !== merchantIdentifier) {
-        console.log(`🔔 Sending travelling merchant notification for: ${merchantName || 'Unknown Merchant'}`);
-        await sendCategoryNotification('Travelling Merchant', 'Travelling Merchant', `The ${merchantName || 'travelling'} merchant has arrived with new items!`);
-        this.lastTravellingMerchantNotification = merchantIdentifier;
-        console.log(`🔔 Travelling merchant notification sent and tracked: ${merchantIdentifier}`);
-      } else {
-        console.log(`🔔 Skipping travelling merchant notification - already sent for: ${merchantIdentifier}`);
+      // Send weather notifications
+      if (weather) {
+        await sendWeatherAlertNotification(weather.current, `Ends: ${weather.endsAt}`);
       }
-    } else if (travellingMerchant !== undefined && travellingMerchant.length === 0) {
-      // Clear the notification tracking when merchant leaves
-      this.lastTravellingMerchantNotification = null;
-      console.log(`🔔 Cleared travelling merchant notification tracking - merchant has left`);
+      
+      // Send travelling merchant notifications (only when merchant arrives with items)
+      if (travellingMerchant && travellingMerchant.length > 0) {
+        // Create a unique identifier for this travelling merchant update
+        const merchantIdentifier = `${merchantName || 'Unknown'}-${travellingMerchant.map(item => `${item.id}:${item.quantity}`).sort().join(',')}`;
+        
+        // Only send notification if we haven't already sent one for this exact merchant with these exact items
+        if (this.lastTravellingMerchantNotification !== merchantIdentifier) {
+          console.log(`🔔 Sending travelling merchant notification for: ${merchantName || 'Unknown Merchant'}`);
+          await sendCategoryNotification('Travelling Merchant', 'Travelling Merchant', `The ${merchantName || 'travelling'} merchant has arrived with new items!`);
+          this.lastTravellingMerchantNotification = merchantIdentifier;
+          console.log(`🔔 Travelling merchant notification sent and tracked: ${merchantIdentifier}`);
+        } else {
+          console.log(`🔔 Skipping travelling merchant notification - already sent for: ${merchantIdentifier}`);
+        }
+      } else if (travellingMerchant && travellingMerchant.length === 0) {
+        // Clear the notification tracking when merchant leaves
+        this.lastTravellingMerchantNotification = null;
+        console.log(`🔔 Cleared travelling merchant notification tracking - merchant has left`);
+      }
+      
+      // Send notifications based on category type
+      switch (category) {
+        case 'seeds':
+        case 'gear':
+        case 'eggs':
+          console.log(`🔔 Processing ${category} notifications for ${items.length} items`);
+          // Per-item notifications for these categories
+          for (const item of items) {
+            const shouldNotify = this.shouldNotifyForItem();
+            console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
+            if (shouldNotify) {
+              await sendItemNotification(item.name, item.quantity, category);
+            }
+          }
+          break;
+          
+        case 'cosmetics':
+          // Category-level notification for cosmetics
+          if (items.length > 0) {
+            await sendCategoryNotification('Cosmetics', 'Cosmetics', 'New cosmetic items are available in the shop!');
+          }
+          break;
+          
+        case 'events':
+          // Category-level notification for events
+          if (items.length > 0) {
+            await sendCategoryNotification('Events', 'Events', 'New event items are available!');
+          }
+          break;
+          
+        default:
+          console.log(`⚠️ Unknown category for notifications: ${category}`);
+          break;
+      }
+      
+      console.log(`🔔 Queued notification process completed for category: ${category}`);
+    });
+    
+    // Start processing the queue if not already running
+    this.processNotificationQueue();
+  }
+
+  private async processNotificationQueue() {
+    if (this.isProcessingNotifications || this.notificationQueue.length === 0) {
+      return;
     }
     
-    // Send notifications based on category type
-    switch (category) {
-      case 'seeds':
-      case 'gear':
-      case 'eggs':
-        console.log(`🔔 Processing ${category} notifications for ${items.length} items`);
-        // Per-item notifications for these categories
-        for (const item of items) {
-          const shouldNotify = this.shouldNotifyForItem();
-          console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
-          if (shouldNotify) {
-            await sendItemNotification(item.name, item.quantity, category);
+    this.isProcessingNotifications = true;
+    
+    try {
+      while (this.notificationQueue.length > 0) {
+        const notificationTask = this.notificationQueue.shift();
+        if (notificationTask) {
+          try {
+            await notificationTask();
+          } catch (error) {
+            console.error('❌ Error processing notification:', error);
           }
         }
-        break;
         
-      case 'cosmetics':
-        // Category-level notification for cosmetics
-        if (items.length > 0) {
-          await sendCategoryNotification('Cosmetics', 'Cosmetics', 'New cosmetic items are available in the shop!');
-        }
-        break;
-        
-      case 'events':
-        // Category-level notification for events
-        if (items.length > 0) {
-          await sendCategoryNotification('Events', 'Events', 'New event items are available!');
-        }
-        break;
-        
-      default:
-        console.log(`⚠️ Unknown category for notifications: ${category}`);
-        break;
+        // Small delay between notifications to prevent overload
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    } finally {
+      this.isProcessingNotifications = false;
     }
-    
-    console.log(`🔔 Notification process completed for category: ${category}`);
   }
 
   private shouldNotifyForItem(): boolean {
@@ -571,28 +629,39 @@ class StockManager {
   }
 
   private validateDataConsistency() {
-    console.log('🔍 Validating data consistency between sources...');
+    // Only log validation every 5 minutes to reduce spam
+    const now = Date.now();
+    if (!this.lastValidationLog || (now - this.lastValidationLog) > 300000) { // 5 minutes
+      console.log('🔍 Validating data consistency between sources...');
+      this.lastValidationLog = now;
+    }
     
-    const now = new Date();
     const sources = Array.from(this.sources.values());
     
     // Check for offline sources with more reasonable timeouts
     for (const source of sources) {
       const lastMessageTime = new Date(source.lastMessageReceived).getTime();
-      const timeDiff = now.getTime() - lastMessageTime;
+      const timeDiff = now - lastMessageTime;
       const maxDelay = this.SOURCE_PRIORITY[source.name].maxDelayMinutes * 60 * 1000;
       
       if (timeDiff > maxDelay) {
         source.isOnline = false;
-        console.log(`⚠️ Source ${source.name} appears offline (last message: ${source.lastMessageReceived})`);
+        // Only log offline status if it changed
+        if (source.isOnline !== false) {
+          console.log(`⚠️ Source ${source.name} appears offline (last message: ${source.lastMessageReceived})`);
+        }
       } else {
         source.isOnline = true;
       }
     }
     
-    // Log source status
+    // Only log source status if there are changes
     const onlineSources = sources.filter(s => s.isOnline);
-    console.log(`📊 Online sources: ${onlineSources.map(s => s.name).join(', ')}`);
+    const onlineCount = onlineSources.length;
+    if (this.lastOnlineCount !== onlineCount) {
+      console.log(`📊 Online sources: ${onlineSources.map(s => s.name).join(', ')} (${onlineCount}/${sources.length})`);
+      this.lastOnlineCount = onlineCount;
+    }
   }
 
   private updateSourceStatus(source: string, isOnline: boolean) {
@@ -615,9 +684,13 @@ class StockManager {
 
   private saveStockData() {
     try {
-      console.log(`💾 Saving stock data with weather:`, this.stockData.weather);
+      // Only log saves every 30 seconds to reduce spam
+      const now = Date.now();
+      if (!this.lastSaveLog || (now - this.lastSaveLog) > 30000) { // 30 seconds
+        console.log('💾 Saving stock data...');
+        this.lastSaveLog = now;
+      }
       fs.writeFileSync(this.stockDataPath, JSON.stringify(this.stockData, null, 2));
-      console.log('💾 Stock data saved successfully');
     } catch (error) {
       console.error('❌ Error saving stock data:', error);
     }

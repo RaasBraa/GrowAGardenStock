@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Expo } from 'expo-server-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -37,8 +36,10 @@ function validateToken(token: string): { isValid: boolean; error?: string } {
     return { isValid: true };
   }
 
-  if (!Expo.isExpoPushToken(token)) {
-    return { isValid: false, error: 'Invalid Expo push token format' };
+  // Basic validation for OneSignal player IDs (UUID format)
+  const oneSignalPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!oneSignalPattern.test(token)) {
+    return { isValid: false, error: 'Invalid token format' };
   }
 
   return { isValid: true };

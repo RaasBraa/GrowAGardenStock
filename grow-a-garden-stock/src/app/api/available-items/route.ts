@@ -1,5 +1,5 @@
+import { ALL_ITEMS } from '@/lib/notification-utils';
 import { NextResponse } from 'next/server';
-import { ALL_ITEMS } from '@/lib/pushNotifications';
 
 export async function GET() {
   try {

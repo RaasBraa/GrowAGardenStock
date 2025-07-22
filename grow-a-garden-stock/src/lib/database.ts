@@ -21,6 +21,15 @@ export interface PushTokenEntry {
 class Database {
   private db: sqlite3.Database | null = null;
   private initializationPromise: Promise<void> | null = null;
+  private operationQueue: Array<() => Promise<void>> = [];
+  private isProcessingQueue = false;
+  private lastOperationTime = 0;
+  private readonly MIN_OPERATION_INTERVAL = 10; // 10ms between operations
+  
+  // Simple caching to reduce database calls
+  private tokenCache: Map<string, PushTokenEntry> = new Map();
+  private cacheExpiry: Map<string, number> = new Map();
+  private readonly CACHE_DURATION = 30000; // 30 seconds cache
 
   async initialize(): Promise<void> {
     // If already initialized, return immediately
@@ -40,13 +49,23 @@ class Database {
 
   private async _initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.db = new sqlite3.Database(DB_PATH, (err) => {
+      this.db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
         if (err) {
           console.error('Error opening database:', err);
           this.initializationPromise = null;
           reject(err);
           return;
         }
+        
+        // Enable WAL mode for better concurrency
+        this.db!.run('PRAGMA journal_mode = WAL', (err) => {
+          if (err) {
+            console.warn('Warning: Could not enable WAL mode:', err);
+          }
+        });
+        
+        // Set busy timeout to handle concurrent access
+        this.db!.configure('busyTimeout', 30000); // 30 seconds
         
         this.createTables()
           .then(() => {
@@ -59,6 +78,49 @@ class Database {
           });
       });
     });
+  }
+
+  // Queue operations to prevent database overload
+  private async queueOperation<T>(operation: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.operationQueue.push(async () => {
+        try {
+          // Rate limiting between operations
+          const now = Date.now();
+          const timeSinceLastOp = now - this.lastOperationTime;
+          if (timeSinceLastOp < this.MIN_OPERATION_INTERVAL) {
+            await new Promise(resolve => setTimeout(resolve, this.MIN_OPERATION_INTERVAL - timeSinceLastOp));
+          }
+          
+          const result = await operation();
+          this.lastOperationTime = Date.now();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.operationQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    try {
+      while (this.operationQueue.length > 0) {
+        const operation = this.operationQueue.shift();
+        if (operation) {
+          await operation();
+        }
+      }
+    } finally {
+      this.isProcessingQueue = false;
+    }
   }
 
   private async createTables(): Promise<void> {
@@ -136,7 +198,7 @@ class Database {
   }
 
   async insertToken(token: PushTokenEntry): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return this.queueOperation(() => new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'));
         return;
@@ -167,7 +229,7 @@ class Database {
         }
         resolve();
       });
-    });
+    }));
   }
 
   async updateToken(token: string, updates: Partial<PushTokenEntry>): Promise<void> {
@@ -247,7 +309,7 @@ class Database {
 
   async getTokens(filters?: {
     is_active?: boolean;
-    device_type?: 'expo' | 'onesignal';
+    device_type?: 'onesignal';
     has_preferences?: boolean;
   }): Promise<PushTokenEntry[]> {
     return new Promise((resolve, reject) => {
@@ -265,9 +327,7 @@ class Database {
         values.push(filters.is_active ? 1 : 0);
       }
 
-      if (filters?.device_type === 'expo') {
-        conditions.push("token LIKE 'ExponentPushToken[%'");
-      } else if (filters?.device_type === 'onesignal') {
+      if (filters?.device_type === 'onesignal') {
         conditions.push("token REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'");
       }
 
@@ -286,7 +346,7 @@ class Database {
           return;
         }
 
-        const tokens: PushTokenEntry[] = rows.map((row: any) => ({
+        const tokens: PushTokenEntry[] = rows.map((row: sqlite3.RowData) => ({
           id: row.id,
           token: row.token,
           created_at: row.created_at,
@@ -383,7 +443,6 @@ class Database {
     total: number;
     active: number;
     inactive: number;
-    expo: number;
     onesignal: number;
     withPreferences: number;
     withoutPreferences: number;
@@ -391,7 +450,6 @@ class Database {
     const allTokens = await this.getTokens();
     const activeTokens = await this.getTokens({ is_active: true });
     const inactiveTokens = await this.getTokens({ is_active: false });
-    const expoTokens = await this.getTokens({ device_type: 'expo' });
     const oneSignalTokens = await this.getTokens({ device_type: 'onesignal' });
     const tokensWithPrefs = await this.getTokens({ has_preferences: true });
     const tokensWithoutPrefs = await this.getTokens({ has_preferences: false });
@@ -400,7 +458,6 @@ class Database {
       total: allTokens.length,
       active: activeTokens.length,
       inactive: inactiveTokens.length,
-      expo: expoTokens.length,
       onesignal: oneSignalTokens.length,
       withPreferences: tokensWithPrefs.length,
       withoutPreferences: tokensWithoutPrefs.length

@@ -484,22 +484,29 @@ export async function sendCategoryNotification(categoryName: string, categoryDis
 
 export async function getTokenStats() {
   try {
-    // Initialize database if needed
     await database.initialize();
-    
     const stats = await database.getStats();
+    
     return {
       total: stats.total,
       active: stats.active,
       inactive: stats.inactive,
-      expo: stats.expo,
       onesignal: stats.onesignal,
       withPreferences: stats.withPreferences,
-      withoutPreferences: stats.withoutPreferences
+      withoutPreferences: stats.withoutPreferences,
+      lastCleanup: new Date().toISOString()
     };
   } catch (error) {
     console.error('Error getting token stats:', error);
-    return null;
+    return {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      onesignal: 0,
+      withPreferences: 0,
+      withoutPreferences: 0,
+      lastCleanup: new Date().toISOString()
+    };
   }
 }
 
