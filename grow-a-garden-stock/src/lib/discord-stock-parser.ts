@@ -32,7 +32,7 @@ export function parseDiscordStockMessage(message: Message, category: 'seeds' | '
     items = parseCactusMessage(message, category);
   } else if (isVulcan) {
     // Parse Vulcan format (embed-based)
-    items = parseVulcanMessage(message, category);
+    items = parseVulcanMessage(message);
   }
 
   if (items.length === 0) {
@@ -72,7 +72,7 @@ function parseCactusMessage(message: Message, category: 'seeds' | 'gear' | 'eggs
   
   if (category === 'seeds') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    relevantBlocks = [blocks.find((b: any) => b.type === 10 && b.content && b.content.match(/carrot|strawberry|tomato|blueberry|cauliflower|watermelon|green apple|avocado|banana|rafflesia|pineapple|kiwi|bell pepper|prickly pear|loquat|feijoa|pitcher plant|sugar apple|burning bud|giant pinecone/i))].filter(Boolean);
+    relevantBlocks = [blocks.find((b: any) => b.type === 10 && b.content && b.content.match(/carrot|strawberry|tomato|blueberry|cauliflower|watermelon|green apple|avocado|banana|rafflesia|pineapple|kiwi|bell pepper|prickly pear|loquat|feijoa|pitcher plant|sugar apple|burning bud|giant pinecone|elder strawberry/i))].filter(Boolean);
   } else if (category === 'gear') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     relevantBlocks = [blocks.find((b: any) => b.type === 10 && b.content && b.content.match(/watering can|trowel|recall wrench|sprinkler|mirror|spray|tool|pot|cleaning spray|magnifying glass|favorite tool|harvest tool|medium toy|medium treat|levelup lollipop/i))].filter(Boolean);
@@ -102,7 +102,7 @@ function parseCactusMessage(message: Message, category: 'seeds' | 'gear' | 'eggs
 }
 
 // Parse Vulcan format (embed-based)
-function parseVulcanMessage(message: Message, category: 'seeds' | 'gear' | 'eggs' | 'cosmetics') {
+function parseVulcanMessage(message: Message) {
   if (!message.embeds || message.embeds.length === 0) return [];
   
   const embed = message.embeds[0];

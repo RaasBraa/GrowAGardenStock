@@ -5,7 +5,7 @@ export const ALL_ITEMS = {
   seeds: [
     "Carrot", "Strawberry", "Blueberry", "Tomato", "Cauliflower", "Corn", "Watermelon",
     "Green Apple", "Avocado", "Banana", "Pineapple", "Kiwi", "Bell Pepper",
-    "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple", "Giant Pinecone"
+    "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple", "Giant Pinecone", "Elder Strawberry"
   ],
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
