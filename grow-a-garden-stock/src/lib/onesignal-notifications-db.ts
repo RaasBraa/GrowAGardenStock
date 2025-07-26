@@ -134,14 +134,20 @@ async function sendOneSignalNotification(
   }
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${ONESIGNAL_API_KEY}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
 
     const result = await response.json();
 
@@ -178,7 +184,18 @@ async function sendOneSignalNotification(
       return { success: false, failedPlayerIds: playerIds };
     }
   } catch (error) {
-    console.error('❌ OneSignal request failed:', error);
+    const errorObj = error as Error;
+    const isNetworkError = errorObj.name === 'AbortError' || 
+                          (errorObj as any).code === 'ETIMEDOUT' || 
+                          (errorObj as any).code === 'ECONNRESET' ||
+                          errorObj.message.includes('fetch failed') ||
+                          errorObj.message.includes('timeout');
+    
+    if (isNetworkError) {
+      console.error(`🌐 OneSignal network error (attempt ${retryCount + 1}/${ONESIGNAL_CONFIG.MAX_RETRIES + 1}):`, errorObj.message);
+    } else {
+      console.error('❌ OneSignal request failed:', errorObj);
+    }
     
     if (retryCount < ONESIGNAL_CONFIG.MAX_RETRIES) {
       const delay = ONESIGNAL_CONFIG.RETRY_DELAYS[retryCount] || 5000;
