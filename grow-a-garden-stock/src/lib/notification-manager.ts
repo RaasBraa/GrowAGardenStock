@@ -2,7 +2,7 @@ import {
   sendItemNotification as sendOneSignalItemNotification,
   sendWeatherAlertNotification as sendOneSignalWeatherNotification,
   sendCategoryNotification as sendOneSignalCategoryNotification
-} from './onesignal-notifications-db';
+} from './onesignal-notifications-db.js';
 
 export async function sendItemNotification(
   itemName: string,

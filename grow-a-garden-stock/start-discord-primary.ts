@@ -1,4 +1,4 @@
-import { initializeDiscordListener } from './src/lib/discord-listener';
+import { initializeDiscordListener } from './src/lib/discord-listener.js';
 
 console.log('🚀 Starting Grow A Garden Stock - Discord Primary');
 console.log('📡 Discord is now the PRIMARY data source');
