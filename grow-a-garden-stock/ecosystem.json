@@ -4,7 +4,7 @@
       "name": "grow-app",
       "script": "npm",
       "args": "start",
-      "cwd": "./grow-a-garden-stock",
+      "cwd": ".",
       "env": {
         "NODE_ENV": "production",
         "NODE_OPTIONS": "--max-old-space-size=768 --expose-gc"
@@ -28,7 +28,7 @@
       "script": "start-stock-manager.ts",
       "interpreter": "node",
       "interpreter_args": "--loader ts-node/esm",
-      "cwd": "./grow-a-garden-stock",
+      "cwd": ".",
       "env": {
         "NODE_ENV": "production",
         "NODE_OPTIONS": "--max-old-space-size=768 --expose-gc"
