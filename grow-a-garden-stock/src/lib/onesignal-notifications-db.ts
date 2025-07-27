@@ -18,10 +18,10 @@ const ONESIGNAL_CONFIG = {
   TOKEN_EXPIRY_DAYS: 30,
   TOKEN_FAILURE_THRESHOLD: 5,
   
-  // Batch Configuration (OneSignal limits)
-  MAX_PLAYER_IDS_PER_REQUEST: 2000, // OneSignal's limit per request
-  BATCH_SIZE: 2000, // Send to 2000 users per API call
-  CONCURRENT_REQUESTS: 5, // Increased to 5 concurrent requests for better performance
+  // Batch Configuration (Reduced for memory safety)
+  MAX_PLAYER_IDS_PER_REQUEST: 1000, // Reduced from 2000 to 1000 for memory safety
+  BATCH_SIZE: 1000, // Reduced from 2000 to 1000 for memory safety
+  CONCURRENT_REQUESTS: 3, // Reduced from 5 to 3 for memory safety
   
   // Rate limiting state
   lastRequestTime: 0,
@@ -143,29 +143,52 @@ async function sendBatchedNotifications(
     
     const batchPromise = sendOneSignalNotification(batch, title, message, data);
     batchPromises.push(batchPromise);
-
-    // Limit concurrency
-    if (batchPromises.length >= concurrencyLimit || i === batches.length - 1) {
+    
+    // Limit concurrent requests
+    if (batchPromises.length >= concurrencyLimit) {
       const results = await Promise.all(batchPromises);
+      batchPromises.length = 0; // Clear array
       
       for (const result of results) {
         if (result.success) {
-          successCount += batch.length - result.failedPlayerIds.length;
+          successCount += batch.length;
         } else {
           failureCount += batch.length;
+          allFailedPlayerIds.push(...result.failedPlayerIds);
         }
-        allFailedPlayerIds.push(...result.failedPlayerIds);
       }
       
-      batchPromises.length = 0; // Clear array
+      // Memory cleanup after each batch
+      if (global.gc) {
+        global.gc();
+      }
+      
+      // Small delay between batch groups
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
   }
-
-  console.log(`✅ Batch sending complete: ${successCount} successful, ${failureCount} failed`);
-  return { 
-    success: failureCount === 0, 
-    failedPlayerIds: allFailedPlayerIds 
-  };
+  
+  // Process remaining batches
+  if (batchPromises.length > 0) {
+    const results = await Promise.all(batchPromises);
+    
+    for (const result of results) {
+      if (result.success) {
+        successCount += result.failedPlayerIds.length === 0 ? 1000 : 1000 - result.failedPlayerIds.length;
+      } else {
+        failureCount += result.failedPlayerIds.length;
+        allFailedPlayerIds.push(...result.failedPlayerIds);
+      }
+    }
+  }
+  
+  // Final memory cleanup
+  if (global.gc) {
+    global.gc();
+  }
+  
+  console.log(`✅ Batch notification completed: ${successCount} successful, ${failureCount} failed`);
+  return { success: failureCount === 0, failedPlayerIds: allFailedPlayerIds };
 }
 
 async function sendOneSignalNotification(
