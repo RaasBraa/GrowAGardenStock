@@ -25,9 +25,8 @@
     },
     {
       "name": "grow-websocket",
-      "script": "start-stock-manager.ts",
-      "interpreter": "node",
-      "interpreter_args": "--loader ts-node/esm",
+      "script": "node",
+      "args": "--loader ts-node/esm start-stock-manager.ts",
       "cwd": ".",
       "env": {
         "NODE_ENV": "production",
