@@ -117,10 +117,31 @@ export async function GET() {
     },
     events: {
       name: "Events",
-      description: "Event shop items (single notification per restock)",
-      items: [],
-      notificationType: "category", // Single notification for entire category
-      defaultEnabled: true
+      description: "Event shop items (individual notifications per item)",
+      items: [
+        // Rare
+        { id: "zen_seed_pack", name: "Zen Seed Pack", rarity: "Rare", category: "events" },
+        { id: "zen_sand", name: "Zen Sand", rarity: "Rare", category: "events" },
+        { id: "tranquil_radar", name: "Tranquil Radar", rarity: "Rare", category: "events" },
+        { id: "corrupt_radar", name: "Corrupt Radar", rarity: "Rare", category: "events" },
+        { id: "zenflare", name: "Zenflare", rarity: "Rare", category: "events" },
+        // Legendary
+        { id: "zen_egg", name: "Zen Egg", rarity: "Legendary", category: "events" },
+        { id: "zen_crate", name: "Zen Crate", rarity: "Legendary", category: "events" },
+        { id: "sakura_bush", name: "Sakura Bush", rarity: "Legendary", category: "events" },
+        { id: "soft_sunshine", name: "Soft Sunshine", rarity: "Legendary", category: "events" },
+        // Mythical
+        { id: "koi", name: "Koi", rarity: "Mythical", category: "events" },
+        { id: "zen_gnome_crate", name: "Zen Gnome Crate", rarity: "Mythical", category: "events" },
+        { id: "spiked_mango", name: "Spiked Mango", rarity: "Mythical", category: "events" },
+        // Divine
+        { id: "hot_spring", name: "Hot Spring", rarity: "Divine", category: "events" },
+        { id: "pet_shard_tranquil", name: "Pet Shard Tranquil", rarity: "Divine", category: "events" },
+        { id: "pet_shard_corrupted", name: "Pet Shard Corrupted", rarity: "Divine", category: "events" },
+        { id: "raiju", name: "Raiju", rarity: "Divine", category: "events" }
+      ],
+      notificationType: "individual", // Individual notifications per item
+      defaultEnabled: ["hot_spring", "pet_shard_tranquil", "pet_shard_corrupted", "raiju", "koi", "zen_gnome_crate", "spiked_mango"]
     }
   };
 

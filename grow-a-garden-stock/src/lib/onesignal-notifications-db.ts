@@ -55,6 +55,12 @@ export const ALL_ITEMS = {
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
     "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg"
   ],
+  events: [
+    "Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", 
+    "Corrupt Radar", "Zenflare", "Zen Crate", "Sakura Bush", "Soft Sunshine", 
+    "Koi", "Zen Gnome Crate", "Spiked Mango", "Pet Shard Tranquil", 
+    "Pet Shard Corrupted", "Raiju"
+  ],
   weather: [
     "Weather Alerts"
   ]

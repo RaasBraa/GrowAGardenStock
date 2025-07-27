@@ -591,9 +591,14 @@ class StockManager {
           break;
           
         case 'events':
-          // Category-level notification for events
-          if (items.length > 0) {
-            await sendCategoryNotification('Events', 'Events', 'New event items are available!');
+          // Per-item notifications for events (changed from category-level)
+          console.log(`🔔 Processing ${category} notifications for ${items.length} items`);
+          for (const item of items) {
+            const shouldNotify = this.shouldNotifyForItem();
+            console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
+            if (shouldNotify) {
+              await sendItemNotification(item.name, item.quantity, category);
+            }
           }
           break;
           
