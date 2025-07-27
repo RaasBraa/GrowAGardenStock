@@ -104,6 +104,34 @@ class Database {
     });
   }
 
+  // Enhanced operation with retry logic for SQLite busy errors
+  private async executeWithRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        const errorMessage = (error as Error).message;
+        
+        // Check if it's a SQLite busy error
+        if (errorMessage.includes('SQLITE_BUSY') || errorMessage.includes('database is locked')) {
+          if (attempt < maxRetries) {
+            const delay = Math.min(100 * attempt, 1000); // Exponential backoff, max 1 second
+            console.warn(`⚠️ Database busy, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          } else {
+            console.error(`❌ Database busy after ${maxRetries} attempts`);
+          }
+        }
+        
+        // For non-busy errors, don't retry
+        throw error;
+      }
+    }
+    
+    throw new Error(`Database operation failed after ${maxRetries} attempts`);
+  }
+
   private async processQueue(): Promise<void> {
     if (this.isProcessingQueue || this.operationQueue.length === 0) {
       return;
@@ -198,7 +226,7 @@ class Database {
   }
 
   async insertToken(token: PushTokenEntry): Promise<void> {
-    return this.queueOperation(() => new Promise((resolve, reject) => {
+    return this.queueOperation(() => this.executeWithRetry(() => new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'));
         return;
@@ -229,7 +257,7 @@ class Database {
         }
         resolve();
       });
-    }));
+    })));
   }
 
   async updateToken(token: string, updates: Partial<PushTokenEntry>): Promise<void> {
@@ -240,7 +268,7 @@ class Database {
       }
 
       const setClauses: string[] = [];
-      const values: any[] = [];
+      const values: (string | number | boolean)[] = [];
 
       if (updates.last_used !== undefined) {
         setClauses.push('last_used = ?');
@@ -320,7 +348,7 @@ class Database {
 
       let sql = 'SELECT * FROM push_tokens';
       const conditions: string[] = [];
-      const values: any[] = [];
+      const values: (string | number | boolean)[] = [];
 
       if (filters?.is_active !== undefined) {
         conditions.push('is_active = ?');
@@ -346,19 +374,24 @@ class Database {
           return;
         }
 
-        const tokens: PushTokenEntry[] = rows.map((row: any) => ({
-          id: row.id,
-          token: row.token,
-          created_at: row.created_at,
-          last_used: row.last_used,
-          is_active: Boolean(row.is_active),
-          device_type: row.device_type,
-          app_version: row.app_version,
-          preferences: row.preferences,
-          failure_count: row.failure_count,
-          last_failure: row.last_failure,
-          onesignal_player_id: row.onesignal_player_id
-        }));
+        const tokens: PushTokenEntry[] = rows.map((row: unknown) => {
+          const rowData = row as { [key: string]: unknown };
+          return {
+            id: rowData.id as number,
+            token: rowData.token as string,
+            created_at: rowData.created_at as string,
+            last_used: rowData.last_used as string,
+            is_active: Boolean(rowData.is_active),
+            device_type: (rowData.device_type as string) === 'ios' || (rowData.device_type as string) === 'android' 
+              ? (rowData.device_type as 'ios' | 'android') 
+              : undefined,
+            app_version: rowData.app_version as string | undefined,
+            preferences: rowData.preferences as string | undefined,
+            failure_count: rowData.failure_count as number | undefined,
+            last_failure: rowData.last_failure as string | undefined,
+            onesignal_player_id: rowData.onesignal_player_id as string | undefined
+          };
+        });
 
         resolve(tokens);
       });

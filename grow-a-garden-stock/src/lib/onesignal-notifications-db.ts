@@ -1,4 +1,4 @@
-import database from './database.js';
+import database from './database';
 
 const ONESIGNAL_APP_ID = '7a3f0ef9-af93-4481-93e1-375183500d50';
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
@@ -99,6 +99,69 @@ async function respectRateLimit(): Promise<void> {
   ONESIGNAL_CONFIG.requestCount++;
 }
 
+// Helper function to split player IDs into batches
+function splitIntoBatches(playerIds: string[], batchSize: number): string[][] {
+  const batches: string[][] = [];
+  for (let i = 0; i < playerIds.length; i += batchSize) {
+    batches.push(playerIds.slice(i, i + batchSize));
+  }
+  return batches;
+}
+
+// Helper function to send notifications in batches
+async function sendBatchedNotifications(
+  playerIds: string[],
+  title: string,
+  message: string,
+  data?: Record<string, unknown>
+): Promise<{ success: boolean; failedPlayerIds: string[] }> {
+  if (playerIds.length <= ONESIGNAL_CONFIG.MAX_PLAYER_IDS_PER_REQUEST) {
+    // No batching needed, send directly
+    return sendOneSignalNotification(playerIds, title, message, data);
+  }
+
+  console.log(`📦 Sending notification to ${playerIds.length} users in batches of ${ONESIGNAL_CONFIG.BATCH_SIZE}...`);
+  
+  const batches = splitIntoBatches(playerIds, ONESIGNAL_CONFIG.BATCH_SIZE);
+  const allFailedPlayerIds: string[] = [];
+  let successCount = 0;
+  let failureCount = 0;
+
+  // Process batches with limited concurrency
+  const concurrencyLimit = ONESIGNAL_CONFIG.CONCURRENT_REQUESTS;
+  const batchPromises: Promise<{ success: boolean; failedPlayerIds: string[] }>[] = [];
+
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    console.log(`📤 Sending batch ${i + 1}/${batches.length} to ${batch.length} users...`);
+    
+    const batchPromise = sendOneSignalNotification(batch, title, message, data);
+    batchPromises.push(batchPromise);
+
+    // Limit concurrency
+    if (batchPromises.length >= concurrencyLimit || i === batches.length - 1) {
+      const results = await Promise.all(batchPromises);
+      
+      for (const result of results) {
+        if (result.success) {
+          successCount += batch.length - result.failedPlayerIds.length;
+        } else {
+          failureCount += batch.length;
+        }
+        allFailedPlayerIds.push(...result.failedPlayerIds);
+      }
+      
+      batchPromises.length = 0; // Clear array
+    }
+  }
+
+  console.log(`✅ Batch sending complete: ${successCount} successful, ${failureCount} failed`);
+  return { 
+    success: failureCount === 0, 
+    failedPlayerIds: allFailedPlayerIds 
+  };
+}
+
 async function sendOneSignalNotification(
   playerIds: string[],
   title: string,
@@ -113,6 +176,11 @@ async function sendOneSignalNotification(
 
   if (playerIds.length === 0) {
     return { success: true, failedPlayerIds: [] };
+  }
+
+  // Check if we need to use batching
+  if (playerIds.length > ONESIGNAL_CONFIG.MAX_PLAYER_IDS_PER_REQUEST) {
+    return sendBatchedNotifications(playerIds, title, message, data);
   }
 
   // Respect rate limits
@@ -135,7 +203,7 @@ async function sendOneSignalNotification(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for slow networks
     
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -185,9 +253,10 @@ async function sendOneSignalNotification(
     }
   } catch (error) {
     const errorObj = error as Error;
+    const networkError = errorObj as { code?: string };
     const isNetworkError = errorObj.name === 'AbortError' || 
-                          (errorObj as any).code === 'ETIMEDOUT' || 
-                          (errorObj as any).code === 'ECONNRESET' ||
+                          networkError.code === 'ETIMEDOUT' || 
+                          networkError.code === 'ECONNRESET' ||
                           errorObj.message.includes('fetch failed') ||
                           errorObj.message.includes('timeout');
     

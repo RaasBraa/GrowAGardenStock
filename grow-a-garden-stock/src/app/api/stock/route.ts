@@ -31,7 +31,25 @@ export async function GET() {
     // Simply read and serve the data from the stock manager
     if (fs.existsSync(stockFilePath)) {
       const fileContents = fs.readFileSync(stockFilePath, 'utf-8');
-      const data = JSON.parse(fileContents);
+      
+      // Validate JSON before parsing
+      let data;
+      try {
+        data = JSON.parse(fileContents);
+      } catch (parseError) {
+        console.error('❌ Error parsing stock-data.json:', parseError);
+        console.error('📄 File contents preview:', fileContents.substring(0, 200) + '...');
+        
+        // Return error response
+        return NextResponse.json(
+          { 
+            error: 'Stock data file is corrupted',
+            message: 'The stock data file appears to be corrupted. Please try again later.',
+            timestamp: new Date().toISOString()
+          }, 
+          { status: 500 }
+        );
+      }
       
       // Transform the data to the new structure with individual timestamps
       const transformedData = {
@@ -51,146 +69,50 @@ export async function GET() {
           events: 30
         };
         
-        if (data[category]) {
-          if (typeof data[category] === 'object' && data[category].items && data[category].lastUpdated) {
-            // New structure already exists
-            const lastUpdated = data[category].lastUpdated;
-            const refreshIntervalMinutes = data[category].refreshIntervalMinutes || refreshIntervals[category as keyof typeof refreshIntervals] || 5;
-            
-            // Calculate next scheduled update time based on the interval
-            const lastUpdateDate = new Date(lastUpdated);
-            const minutesSinceEpoch = Math.floor(lastUpdateDate.getTime() / (1000 * 60));
-            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervalMinutes);
-            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervalMinutes;
-            const nextUpdate = data[category].nextUpdate || new Date(nextScheduledMinute * 60 * 1000).toISOString();
-            
-            transformedData[categoryKey] = {
-              items: data[category].items,
-              lastUpdated: lastUpdated,
-              nextUpdate: nextUpdate,
-              refreshIntervalMinutes: refreshIntervalMinutes
-            };
-          } else {
-            // Old structure - migrate to new structure
-            const lastUpdated = data.lastUpdated || new Date().toISOString();
-            const refreshIntervalMinutes = refreshIntervals[category as keyof typeof refreshIntervals] || 5;
-            
-            // Calculate next scheduled update time based on the interval
-            const lastUpdateDate = new Date(lastUpdated);
-            const minutesSinceEpoch = Math.floor(lastUpdateDate.getTime() / (1000 * 60));
-            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervalMinutes);
-            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervalMinutes;
-            const nextUpdate = new Date(nextScheduledMinute * 60 * 1000).toISOString();
-            
-            transformedData[categoryKey] = {
-              items: data[category],
-              lastUpdated: lastUpdated,
-              nextUpdate: nextUpdate,
-              refreshIntervalMinutes: refreshIntervalMinutes
-            };
-          }
+        const categoryData = data[category as keyof typeof data];
+        const refreshInterval = refreshIntervals[category as keyof typeof refreshIntervals];
+        
+        if (categoryData && categoryData.items) {
+          transformedData[categoryKey] = {
+            items: categoryData.items,
+            lastUpdated: categoryData.lastUpdated || data.lastUpdated,
+            nextUpdate: categoryData.nextUpdate || new Date(Date.now() + refreshInterval * 60 * 1000).toISOString(),
+            refreshIntervalMinutes: refreshInterval
+          };
         } else {
-          // Category doesn't exist - provide empty structure
-          const lastUpdated = data.lastUpdated || new Date().toISOString();
-          const refreshIntervalMinutes = refreshIntervals[category as keyof typeof refreshIntervals] || 5;
-          
-          // Calculate next scheduled update time based on the interval
-          const lastUpdateDate = new Date(lastUpdated);
-          const minutesSinceEpoch = Math.floor(lastUpdateDate.getTime() / (1000 * 60));
-          const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervalMinutes);
-          const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervalMinutes;
-          const nextUpdate = new Date(nextScheduledMinute * 60 * 1000).toISOString();
-          
+          // Provide default structure if category is missing
           transformedData[categoryKey] = {
             items: [],
-            lastUpdated: lastUpdated,
-            nextUpdate: nextUpdate,
-            refreshIntervalMinutes: refreshIntervalMinutes
+            lastUpdated: data.lastUpdated || new Date().toISOString(),
+            nextUpdate: new Date(Date.now() + refreshInterval * 60 * 1000).toISOString(),
+            refreshIntervalMinutes: refreshInterval
           };
         }
       });
       
-      // Weather data remains unchanged
+      // Add weather and travelling merchant data if available
       if (data.weather) {
         transformedData.weather = data.weather;
       }
       
-      // Travelling merchant data
       if (data.travellingMerchant) {
         transformedData.travellingMerchant = data.travellingMerchant;
       }
       
       return NextResponse.json(transformedData);
     } else {
-      // If the file doesn't exist yet, return an empty object with a timestamp.
-      // The mobile app can then know that data is not yet available.
-      const currentTime = new Date().toISOString();
-      const refreshIntervals = {
-        seeds: 5,
-        gear: 5,
-        eggs: 30,
-        cosmetics: 240,
-        events: 30
+      // File doesn't exist, return empty data structure
+      const now = new Date().toISOString();
+      const emptyData: TransformedStockData = {
+        lastUpdated: now,
+        seeds: { items: [], lastUpdated: now, nextUpdate: now, refreshIntervalMinutes: 5 },
+        gear: { items: [], lastUpdated: now, nextUpdate: now, refreshIntervalMinutes: 5 },
+        eggs: { items: [], lastUpdated: now, nextUpdate: now, refreshIntervalMinutes: 30 },
+        cosmetics: { items: [], lastUpdated: now, nextUpdate: now, refreshIntervalMinutes: 240 },
+        events: { items: [], lastUpdated: now, nextUpdate: now, refreshIntervalMinutes: 30 }
       };
       
-      return NextResponse.json({ 
-        seeds: { 
-          items: [], 
-          lastUpdated: currentTime,
-          nextUpdate: (() => {
-            const minutesSinceEpoch = Math.floor(new Date(currentTime).getTime() / (1000 * 60));
-            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervals.seeds);
-            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervals.seeds;
-            return new Date(nextScheduledMinute * 60 * 1000).toISOString();
-          })(),
-          refreshIntervalMinutes: refreshIntervals.seeds
-        },
-        gear: { 
-          items: [], 
-          lastUpdated: currentTime,
-          nextUpdate: (() => {
-            const minutesSinceEpoch = Math.floor(new Date(currentTime).getTime() / (1000 * 60));
-            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervals.gear);
-            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervals.gear;
-            return new Date(nextScheduledMinute * 60 * 1000).toISOString();
-          })(),
-          refreshIntervalMinutes: refreshIntervals.gear
-        },
-        eggs: { 
-          items: [], 
-          lastUpdated: currentTime,
-          nextUpdate: (() => {
-            const minutesSinceEpoch = Math.floor(new Date(currentTime).getTime() / (1000 * 60));
-            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervals.eggs);
-            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervals.eggs;
-            return new Date(nextScheduledMinute * 60 * 1000).toISOString();
-          })(),
-          refreshIntervalMinutes: refreshIntervals.eggs
-        },
-        cosmetics: { 
-          items: [], 
-          lastUpdated: currentTime,
-          nextUpdate: (() => {
-            const minutesSinceEpoch = Math.floor(new Date(currentTime).getTime() / (1000 * 60));
-            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervals.cosmetics);
-            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervals.cosmetics;
-            return new Date(nextScheduledMinute * 60 * 1000).toISOString();
-          })(),
-          refreshIntervalMinutes: refreshIntervals.cosmetics
-        },
-        events: { 
-          items: [], 
-          lastUpdated: currentTime,
-          nextUpdate: (() => {
-            const minutesSinceEpoch = Math.floor(new Date(currentTime).getTime() / (1000 * 60));
-            const intervalsSinceEpoch = Math.floor(minutesSinceEpoch / refreshIntervals.events);
-            const nextScheduledMinute = (intervalsSinceEpoch + 1) * refreshIntervals.events;
-            return new Date(nextScheduledMinute * 60 * 1000).toISOString();
-          })(),
-          refreshIntervalMinutes: refreshIntervals.events
-        },
-        lastUpdated: currentTime
-      }, { status: 404 });
+      return NextResponse.json(emptyData);
     }
   } catch (error) {
     console.error('Error reading stock data file:', error);

@@ -1,16 +1,16 @@
-import { 
+import {
   sendItemNotification as sendOneSignalItemNotification,
   sendWeatherAlertNotification as sendOneSignalWeatherNotification,
   sendCategoryNotification as sendOneSignalCategoryNotification
-} from './onesignal-notifications-db.js';
+} from './onesignal-notifications-db';
 
 export async function sendItemNotification(
-  itemName: string, 
-  quantity: number, 
+  itemName: string,
+  quantity: number,
   category: string
 ) {
   console.log(`📤 Sending ${itemName} notification via OneSignal`);
-  
+
   try {
     await sendOneSignalItemNotification(itemName, quantity, category);
     console.log(`✅ OneSignal notification sent for ${itemName}`);
@@ -20,11 +20,11 @@ export async function sendItemNotification(
 }
 
 export async function sendWeatherAlertNotification(
-  weatherType: string, 
+  weatherType: string,
   description: string
 ) {
   console.log(`🌤️ Sending weather alert via OneSignal`);
-  
+
   try {
     await sendOneSignalWeatherNotification(weatherType, description);
     console.log(`✅ OneSignal weather alert sent`);
@@ -34,12 +34,12 @@ export async function sendWeatherAlertNotification(
 }
 
 export async function sendCategoryNotification(
-  categoryName: string, 
-  categoryDisplayName: string, 
+  categoryName: string,
+  categoryDisplayName: string,
   description: string
 ) {
   console.log(`📦 Sending category notification via OneSignal`);
-  
+
   try {
     await sendOneSignalCategoryNotification(categoryName, categoryDisplayName, description);
     console.log(`✅ OneSignal category notification sent`);

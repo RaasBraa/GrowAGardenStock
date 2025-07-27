@@ -1,5 +1,5 @@
-import WebSocket from 'ws';
-import { stockManager, StockItem, TravellingMerchantItem } from './stock-manager.js';
+import { WebSocket } from 'ws';
+import { stockManager, StockItem, TravellingMerchantItem } from './stock-manager';
 
 interface WebSocketStockData {
   seed_stock: Array<{
@@ -108,7 +108,7 @@ class JStudioWebSocketListener {
         this.reconnectAttempts = 0;
       });
 
-      this.ws.on('message', async (data: WebSocket.Data) => {
+      this.ws.on('message', async (data: Buffer) => {
         try {
           const rawMessage = data.toString();
           const message = JSON.parse(rawMessage) as WebSocketStockData;

@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { jstudioWebSocket } from './jstudio-websocket.js';
-import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener.js';
-import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
-import { sendItemNotification, sendWeatherAlertNotification, sendCategoryNotification } from './notification-manager.js';
+import { jstudioWebSocket } from './jstudio-websocket';
+import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener';
+import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan';
+import { sendItemNotification, sendWeatherAlertNotification, sendCategoryNotification } from './notification-manager';
 import { randomUUID } from 'crypto';
 
 
@@ -112,12 +112,24 @@ class StockManager {
   private loadOrCreateStockData(): AllStockData {
     try {
       if (fs.existsSync(this.stockDataPath)) {
-        const data = JSON.parse(fs.readFileSync(this.stockDataPath, 'utf-8'));
+        // Use atomic read to prevent corruption
+        const data = fs.readFileSync(this.stockDataPath, 'utf-8');
+        const parsedData = JSON.parse(data);
         // Ensure all required fields exist
-        return this.ensureStockDataStructure(data);
+        return this.ensureStockDataStructure(parsedData);
       }
     } catch (error) {
       console.error('Error loading stock data:', error);
+      // If file is corrupted, try to backup and create new one
+      if (fs.existsSync(this.stockDataPath)) {
+        const backupPath = `${this.stockDataPath}.corrupted.${Date.now()}`;
+        try {
+          fs.renameSync(this.stockDataPath, backupPath);
+          console.log(`💾 Corrupted stock data backed up to: ${backupPath}`);
+        } catch (backupError) {
+          console.error('Failed to backup corrupted file:', backupError);
+        }
+      }
     }
     
     return this.createEmptyStockData();
@@ -690,7 +702,17 @@ class StockManager {
         console.log('💾 Saving stock data...');
         this.lastSaveLog = now;
       }
-      fs.writeFileSync(this.stockDataPath, JSON.stringify(this.stockData, null, 2));
+      
+      // Use atomic write to prevent corruption
+      const tempPath = `${this.stockDataPath}.tmp`;
+      const data = JSON.stringify(this.stockData, null, 2);
+      
+      // Write to temporary file first
+      fs.writeFileSync(tempPath, data, 'utf8');
+      
+      // Then atomically rename to final location
+      fs.renameSync(tempPath, this.stockDataPath);
+      
     } catch (error) {
       console.error('❌ Error saving stock data:', error);
     }
