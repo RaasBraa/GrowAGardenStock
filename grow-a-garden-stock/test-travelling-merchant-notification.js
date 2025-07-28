@@ -15,7 +15,7 @@ async function testTravellingMerchantNotification() {
   try {
     console.log('🔧 Environment check:');
     console.log(`  ONESIGNAL_APP_ID: ${process.env.ONESIGNAL_APP_ID ? 'Set' : 'Not set'}`);
-    console.log(`  ONESIGNAL_REST_API_KEY: ${process.env.ONESIGNAL_REST_API_KEY ? 'Set' : 'Not set'}`);
+    console.log(`  ONESIGNAL_API_KEY: ${process.env.ONESIGNAL_API_KEY ? 'Set' : 'Not set'}`);
     console.log(`  ONESIGNAL_ANDROID_CHANNEL_ID: ${process.env.ONESIGNAL_ANDROID_CHANNEL_ID ? 'Set' : 'Not set'}`);
     
     console.log('\n🧪 Sending test travelling merchant notification...');
