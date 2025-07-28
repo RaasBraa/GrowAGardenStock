@@ -20,12 +20,17 @@ interface TransformedStockData {
     lastUpdated: string;
     isActive: boolean;
   };
+  // Support both old and new weather formats for backward compatibility
   weather?: {
-    activeWeather: Array<{
+    // New multiple weather format
+    activeWeather?: Array<{
       current: string;
       endsAt: string;
     }>;
-    lastUpdated: string;
+    lastUpdated?: string;
+    // Old single weather format (for backward compatibility)
+    current?: string;
+    endsAt?: string;
   };
   lastUpdated: string;
 }
@@ -98,7 +103,39 @@ export async function GET() {
       
       // Add weather and travelling merchant data if available
       if (data.weather) {
-        transformedData.weather = data.weather;
+        // Handle both old single weather format and new multiple weather format
+        if (data.weather.activeWeather && Array.isArray(data.weather.activeWeather)) {
+          // New multiple weather format - provide both formats for backward compatibility
+          const activeWeather = data.weather.activeWeather;
+          if (activeWeather.length > 0) {
+            // Use the first active weather for backward compatibility
+            const firstWeather = activeWeather[0];
+            transformedData.weather = {
+              // New format
+              activeWeather: activeWeather,
+              lastUpdated: data.weather.lastUpdated,
+              // Old format for backward compatibility
+              current: firstWeather.current,
+              endsAt: firstWeather.endsAt
+            };
+          } else {
+            // No active weather
+            transformedData.weather = {
+              activeWeather: [],
+              lastUpdated: data.weather.lastUpdated
+            };
+          }
+        } else if (data.weather.current && data.weather.endsAt) {
+          // Old single weather format - provide both formats
+          transformedData.weather = {
+            // New format
+            activeWeather: [data.weather],
+            lastUpdated: data.weather.lastUpdated || data.lastUpdated,
+            // Old format for backward compatibility
+            current: data.weather.current,
+            endsAt: data.weather.endsAt
+          };
+        }
       }
       
       if (data.travellingMerchant) {

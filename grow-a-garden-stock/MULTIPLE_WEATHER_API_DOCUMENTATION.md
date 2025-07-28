@@ -8,7 +8,7 @@ The Grow A Garden Stock API now supports **multiple simultaneous weather events*
 
 ### API Response Format
 
-The `/api/stock` endpoint now returns weather data in this format:
+The `/api/stock` endpoint now returns weather data in this format with backward compatibility:
 
 ```json
 {
@@ -27,10 +27,18 @@ The `/api/stock` endpoint now returns weather data in this format:
         "endsAt": "2025-01-27T13:15:00.000Z"
       }
     ],
-    "lastUpdated": "2025-01-27T12:00:00.000Z"
+    "lastUpdated": "2025-01-27T12:00:00.000Z",
+    "current": "Sunny",
+    "endsAt": "2025-01-27T12:30:00.000Z"
   }
 }
 ```
+
+### Backward Compatibility
+
+The API maintains backward compatibility by including both formats:
+- **New apps**: Use `weather.activeWeather[]` array for multiple weather support
+- **Old apps**: Continue using `weather.current` and `weather.endsAt` (shows first active weather)
 
 ### Key Changes
 
@@ -66,15 +74,15 @@ Ends in 1h 30m
 
 ### 1. Update Weather Display
 
-**Before (Single Weather):**
+**Legacy Apps (Backward Compatible):**
 ```typescript
 const weather = stockData.weather;
-if (weather) {
+if (weather && weather.current) {
   displayWeather(weather.current, weather.endsAt);
 }
 ```
 
-**After (Multiple Weather):**
+**New Apps (Multiple Weather Support):**
 ```typescript
 const weatherData = stockData.weather;
 if (weatherData && weatherData.activeWeather.length > 0) {
@@ -82,6 +90,22 @@ if (weatherData && weatherData.activeWeather.length > 0) {
   weatherData.activeWeather.forEach(weather => {
     displayWeather(weather.current, weather.endsAt);
   });
+}
+```
+
+**Hybrid Approach (Recommended for Migration):**
+```typescript
+const weatherData = stockData.weather;
+if (weatherData) {
+  if (weatherData.activeWeather && weatherData.activeWeather.length > 0) {
+    // New multiple weather format
+    weatherData.activeWeather.forEach(weather => {
+      displayWeather(weather.current, weather.endsAt);
+    });
+  } else if (weatherData.current) {
+    // Fallback to legacy format
+    displayWeather(weatherData.current, weatherData.endsAt);
+  }
 }
 ```
 

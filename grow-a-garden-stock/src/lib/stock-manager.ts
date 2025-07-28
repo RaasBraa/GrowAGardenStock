@@ -142,6 +142,27 @@ class StockManager {
 
   private ensureStockDataStructure(data: Partial<AllStockData>): AllStockData {
     const now = new Date().toISOString();
+    
+    // Handle weather data conversion from old format to new format
+    let weatherData: MultipleWeatherInfo | undefined;
+    if (data.weather) {
+      if (data.weather.activeWeather && Array.isArray(data.weather.activeWeather)) {
+        // Already in new format
+        weatherData = data.weather as MultipleWeatherInfo;
+      } else {
+        // Check if it's old single weather format
+        const oldWeather = data.weather as unknown as { current?: string; endsAt?: string; lastUpdated?: string };
+        if (oldWeather.current && oldWeather.endsAt) {
+          // Convert old single weather format to new multiple weather format
+          weatherData = {
+            activeWeather: [{ current: oldWeather.current, endsAt: oldWeather.endsAt }],
+            lastUpdated: oldWeather.lastUpdated || now
+          };
+          console.log('🔄 Converted old weather format to new multiple weather format');
+        }
+      }
+    }
+    
     return {
       lastUpdated: data.lastUpdated || now,
       seeds: data.seeds || this.createEmptyCategory('seeds'),
@@ -149,7 +170,7 @@ class StockManager {
       eggs: data.eggs || this.createEmptyCategory('eggs'),
       cosmetics: data.cosmetics || this.createEmptyCategory('cosmetics'),
       events: data.events || this.createEmptyCategory('events'),
-      weather: data.weather,
+      weather: weatherData,
       travellingMerchant: data.travellingMerchant
     };
   }
@@ -411,6 +432,14 @@ class StockManager {
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather, travellingMerchant, merchantName);
     
+    // Send notifications for all active weather events (if this was a weather update)
+    if (weather && this.stockData.weather && this.stockData.weather.activeWeather.length > 0) {
+      console.log(`🌤️ Sending notifications for ${this.stockData.weather.activeWeather.length} active weather events`);
+      for (const activeWeather of this.stockData.weather.activeWeather) {
+        this.sendWeatherNotification(activeWeather);
+      }
+    }
+    
     console.log(`✅ Updated stock data from ${source} for ${category}`);
   }
 
@@ -548,6 +577,39 @@ class StockManager {
     return hash;
   }
 
+  private async sendWeatherNotification(weather: WeatherInfo) {
+    // Calculate time remaining
+    const now = new Date();
+    const endTime = new Date(weather.endsAt);
+    const timeRemainingMs = endTime.getTime() - now.getTime();
+    const timeRemainingSeconds = Math.max(0, Math.floor(timeRemainingMs / 1000));
+    const timeRemainingMinutes = Math.floor(timeRemainingSeconds / 60);
+    const remainingSeconds = timeRemainingSeconds % 60;
+    
+    let timeMessage;
+    if (timeRemainingSeconds === 0) {
+      timeMessage = "Ends now!";
+    } else if (timeRemainingMinutes < 10) {
+      // Include seconds for less than 10 minutes
+      if (timeRemainingMinutes === 0) {
+        timeMessage = `Ends in ${remainingSeconds} seconds`;
+      } else if (remainingSeconds === 0) {
+        timeMessage = `Ends in ${timeRemainingMinutes} minutes`;
+      } else {
+        timeMessage = `Ends in ${timeRemainingMinutes}m ${remainingSeconds}s`;
+      }
+    } else if (timeRemainingMinutes < 60) {
+      timeMessage = `Ends in ${timeRemainingMinutes} minutes`;
+    } else {
+      const hours = Math.floor(timeRemainingMinutes / 60);
+      const minutes = timeRemainingMinutes % 60;
+      timeMessage = `Ends in ${hours}h ${minutes}m`;
+    }
+    
+    console.log(`🌤️ Sending weather notification: ${weather.current} - ${timeMessage}`);
+    await sendWeatherAlertNotification(weather.current, timeMessage);
+  }
+
   private async sendNotifications(
     stockId: string,
     category: string,
@@ -565,37 +627,9 @@ class StockManager {
       console.log(`🔔 Weather to notify for: ${weather ? weather.current : 'none'}`);
       console.log(`🔔 Travelling merchant to notify for: ${travellingMerchant ? travellingMerchant.length : 0} items`);
       
-      // Send weather notifications
+      // Send weather notifications (legacy support for single weather updates)
       if (weather) {
-        // Calculate time remaining
-        const now = new Date();
-        const endTime = new Date(weather.endsAt);
-        const timeRemainingMs = endTime.getTime() - now.getTime();
-        const timeRemainingSeconds = Math.max(0, Math.floor(timeRemainingMs / 1000));
-        const timeRemainingMinutes = Math.floor(timeRemainingSeconds / 60);
-        const remainingSeconds = timeRemainingSeconds % 60;
-        
-        let timeMessage;
-        if (timeRemainingSeconds === 0) {
-          timeMessage = "Ends now!";
-        } else if (timeRemainingMinutes < 10) {
-          // Include seconds for less than 10 minutes
-          if (timeRemainingMinutes === 0) {
-            timeMessage = `Ends in ${remainingSeconds} seconds`;
-          } else if (remainingSeconds === 0) {
-            timeMessage = `Ends in ${timeRemainingMinutes} minutes`;
-          } else {
-            timeMessage = `Ends in ${timeRemainingMinutes}m ${remainingSeconds}s`;
-          }
-        } else if (timeRemainingMinutes < 60) {
-          timeMessage = `Ends in ${timeRemainingMinutes} minutes`;
-        } else {
-          const hours = Math.floor(timeRemainingMinutes / 60);
-          const minutes = timeRemainingMinutes % 60;
-          timeMessage = `Ends in ${hours}h ${minutes}m`;
-        }
-        
-        await sendWeatherAlertNotification(weather.current, timeMessage);
+        await this.sendWeatherNotification(weather);
       }
       
       // Send travelling merchant notifications (only when merchant arrives with items)
