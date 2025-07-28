@@ -451,16 +451,22 @@ class StockManager {
     // Send notifications for new weather events only (if this was a weather update)
     if (weather && this.stockData.weather && this.stockData.weather.activeWeather.length > 0) {
       console.log(`🌤️ Checking for new weather events to notify...`);
+      console.log(`🌤️ Active weather events: ${this.stockData.weather.activeWeather.length}`);
       
       // Only send notifications for weather events that are new or have changed
       for (const activeWeather of this.stockData.weather.activeWeather) {
         const weatherKey = `${activeWeather.current}-${activeWeather.endsAt}`;
         const lastNotification = this.lastWeatherNotifications.get(activeWeather.current);
         
+        console.log(`🌤️ Checking weather: ${activeWeather.current}`);
+        console.log(`🌤️ Current key: ${weatherKey}`);
+        console.log(`🌤️ Last notification: ${lastNotification || 'none'}`);
+        
         if (lastNotification !== weatherKey) {
           console.log(`🌤️ New weather event detected: ${activeWeather.current} - sending notification`);
           await this.sendWeatherNotification(activeWeather);
           this.lastWeatherNotifications.set(activeWeather.current, weatherKey);
+          console.log(`🌤️ Weather notification sent and tracked: ${activeWeather.current}`);
         } else {
           console.log(`🌤️ Weather event already notified: ${activeWeather.current} - skipping`);
         }
@@ -654,10 +660,8 @@ class StockManager {
       console.log(`🔔 Weather to notify for: ${weather ? weather.current : 'none'}`);
       console.log(`🔔 Travelling merchant to notify for: ${travellingMerchant ? travellingMerchant.length : 0} items`);
       
-      // Send weather notifications (legacy support for single weather updates)
-      if (weather) {
-        await this.sendWeatherNotification(weather);
-      }
+      // Weather notifications are now handled by the new multiple weather system
+      // to prevent duplicate notifications
       
       // Send travelling merchant notifications (only when merchant arrives with items)
       if (travellingMerchant && travellingMerchant.length > 0) {
