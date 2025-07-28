@@ -20,7 +20,13 @@ interface TransformedStockData {
     lastUpdated: string;
     isActive: boolean;
   };
-  weather?: unknown;
+  weather?: {
+    activeWeather: Array<{
+      current: string;
+      endsAt: string;
+    }>;
+    lastUpdated: string;
+  };
   lastUpdated: string;
 }
 

@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { stockManager, StockItem, TravellingMerchantItem } from './stock-manager.js';
+import { stockManager, StockItem, TravellingMerchantItem, WeatherInfo } from './stock-manager.js';
 
 interface WebSocketStockData {
   seed_stock: Array<{
@@ -166,10 +166,31 @@ class JStudioWebSocketListener {
     try {
       console.log('🔄 Processing WebSocket stock update...');
       
-      // Skip weather processing from WebSocket - use Discord sources instead
-      // WebSocket sends all possible weather types, making it unreliable for current weather
+      // Process multiple active weather events from WebSocket
       if (stockData.weather && stockData.weather.length > 0) {
-        console.log('🌤️ Skipping WebSocket weather update - using Discord sources for weather data');
+        console.log(`🌤️ Processing WebSocket weather data: ${stockData.weather.length} total weather events`);
+        
+        // Filter for active weather events only
+        const activeWeather = stockData.weather.filter(w => w.active);
+        console.log(`🌤️ Active weather events: ${activeWeather.length}`);
+        
+        if (activeWeather.length > 0) {
+          // Process each active weather event
+          for (const weather of activeWeather) {
+            console.log(`🌤️ Processing active weather: ${weather.weather_name}`);
+            
+            const weatherInfo: WeatherInfo = {
+              current: weather.weather_name,
+              endsAt: new Date(weather.end_duration_unix * 1000).toISOString()
+            };
+            
+            // Send weather notification for this active weather
+            console.log(`🌤️ Sending notification for: ${weather.weather_name}`);
+            await stockManager.updateStockData('websocket', 'seeds', [], weatherInfo);
+          }
+        } else {
+          console.log('🌤️ No active weather events found');
+        }
       }
       
       // Process seeds (without weather)

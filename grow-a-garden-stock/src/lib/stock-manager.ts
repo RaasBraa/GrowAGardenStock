@@ -20,6 +20,11 @@ export interface WeatherInfo {
   endsAt: string;
 }
 
+export interface MultipleWeatherInfo {
+  activeWeather: WeatherInfo[];
+  lastUpdated: string;
+}
+
 export interface TravellingMerchantItem {
   id: string;
   name: string;
@@ -51,7 +56,7 @@ export interface AllStockData {
   eggs: StockCategory;
   cosmetics: StockCategory;
   events: StockCategory;
-  weather?: WeatherInfo;
+  weather?: MultipleWeatherInfo;
   travellingMerchant?: TravellingMerchantData;
 }
 
@@ -348,8 +353,26 @@ class StockManager {
     }
     
     if (weather) {
-      this.stockData.weather = weather;
-      console.log(`🌤️ Weather data updated: ${weather.current}`);
+      // Initialize weather structure if it doesn't exist
+      if (!this.stockData.weather) {
+        this.stockData.weather = {
+          activeWeather: [],
+          lastUpdated: nowISO
+        };
+      }
+      
+      // Add this weather event to the active weather list
+      const existingIndex = this.stockData.weather.activeWeather.findIndex(w => w.current === weather.current);
+      if (existingIndex >= 0) {
+        // Update existing weather event
+        this.stockData.weather.activeWeather[existingIndex] = weather;
+      } else {
+        // Add new weather event
+        this.stockData.weather.activeWeather.push(weather);
+      }
+      
+      this.stockData.weather.lastUpdated = nowISO;
+      console.log(`🌤️ Weather data updated: ${weather.current} (${this.stockData.weather.activeWeather.length} active weather events)`);
     }
     
     if (travellingMerchant !== undefined) {
@@ -544,15 +567,26 @@ class StockManager {
       
       // Send weather notifications
       if (weather) {
-        // Calculate time remaining in minutes
+        // Calculate time remaining
         const now = new Date();
         const endTime = new Date(weather.endsAt);
         const timeRemainingMs = endTime.getTime() - now.getTime();
-        const timeRemainingMinutes = Math.max(0, Math.floor(timeRemainingMs / (1000 * 60)));
+        const timeRemainingSeconds = Math.max(0, Math.floor(timeRemainingMs / 1000));
+        const timeRemainingMinutes = Math.floor(timeRemainingSeconds / 60);
+        const remainingSeconds = timeRemainingSeconds % 60;
         
         let timeMessage;
-        if (timeRemainingMinutes === 0) {
+        if (timeRemainingSeconds === 0) {
           timeMessage = "Ends now!";
+        } else if (timeRemainingMinutes < 10) {
+          // Include seconds for less than 10 minutes
+          if (timeRemainingMinutes === 0) {
+            timeMessage = `Ends in ${remainingSeconds} seconds`;
+          } else if (remainingSeconds === 0) {
+            timeMessage = `Ends in ${timeRemainingMinutes} minutes`;
+          } else {
+            timeMessage = `Ends in ${timeRemainingMinutes}m ${remainingSeconds}s`;
+          }
         } else if (timeRemainingMinutes < 60) {
           timeMessage = `Ends in ${timeRemainingMinutes} minutes`;
         } else {
