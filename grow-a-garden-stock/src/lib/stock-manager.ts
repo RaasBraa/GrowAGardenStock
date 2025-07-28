@@ -76,6 +76,7 @@ class StockManager {
   private sources: Map<string, SourceInfo> = new Map();
   private previousStockData: AllStockData | null = null;
   private lastTravellingMerchantNotification: string | null = null; // Track last notification to prevent duplicates
+  private lastWeatherNotifications: Map<string, string> = new Map(); // Track last weather notification for each type
   
   // Rate limiting to prevent server overload
   private lastUpdateTime: { [key: string]: number } = {};
@@ -392,6 +393,21 @@ class StockManager {
         this.stockData.weather.activeWeather.push(weather);
       }
       
+      // Clean up expired weather events and their notification tracking
+      this.stockData.weather.activeWeather = this.stockData.weather.activeWeather.filter(w => {
+        const endTime = new Date(w.endsAt);
+        const now = new Date();
+        const isExpired = endTime.getTime() <= now.getTime();
+        
+        if (isExpired) {
+          console.log(`🌤️ Removing expired weather event: ${w.current}`);
+          // Remove notification tracking for expired weather
+          this.lastWeatherNotifications.delete(w.current);
+        }
+        
+        return !isExpired;
+      });
+      
       this.stockData.weather.lastUpdated = nowISO;
       console.log(`🌤️ Weather data updated: ${weather.current} (${this.stockData.weather.activeWeather.length} active weather events)`);
     }
@@ -432,11 +448,22 @@ class StockManager {
     // Send notifications (only for new/changed items)
     this.sendNotifications(stockId, category, items, weather, travellingMerchant, merchantName);
     
-    // Send notifications for all active weather events (if this was a weather update)
+    // Send notifications for new weather events only (if this was a weather update)
     if (weather && this.stockData.weather && this.stockData.weather.activeWeather.length > 0) {
-      console.log(`🌤️ Sending notifications for ${this.stockData.weather.activeWeather.length} active weather events`);
+      console.log(`🌤️ Checking for new weather events to notify...`);
+      
+      // Only send notifications for weather events that are new or have changed
       for (const activeWeather of this.stockData.weather.activeWeather) {
-        this.sendWeatherNotification(activeWeather);
+        const weatherKey = `${activeWeather.current}-${activeWeather.endsAt}`;
+        const lastNotification = this.lastWeatherNotifications.get(activeWeather.current);
+        
+        if (lastNotification !== weatherKey) {
+          console.log(`🌤️ New weather event detected: ${activeWeather.current} - sending notification`);
+          await this.sendWeatherNotification(activeWeather);
+          this.lastWeatherNotifications.set(activeWeather.current, weatherKey);
+        } else {
+          console.log(`🌤️ Weather event already notified: ${activeWeather.current} - skipping`);
+        }
       }
     }
     
