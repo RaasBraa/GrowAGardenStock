@@ -511,7 +511,7 @@ export async function sendWeatherAlertNotification(weatherType: string, descript
 
     const { success, failedPlayerIds } = await sendOneSignalNotification(
       playerIds,
-      `Weather Alert: ${weatherType}`,
+      `🌤️ Weather Alert: ${weatherType}`,
       description,
       notificationData
     );

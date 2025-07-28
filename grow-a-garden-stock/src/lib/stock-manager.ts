@@ -544,7 +544,24 @@ class StockManager {
       
       // Send weather notifications
       if (weather) {
-        await sendWeatherAlertNotification(weather.current, `Ends: ${weather.endsAt}`);
+        // Calculate time remaining in minutes
+        const now = new Date();
+        const endTime = new Date(weather.endsAt);
+        const timeRemainingMs = endTime.getTime() - now.getTime();
+        const timeRemainingMinutes = Math.max(0, Math.floor(timeRemainingMs / (1000 * 60)));
+        
+        let timeMessage;
+        if (timeRemainingMinutes === 0) {
+          timeMessage = "Ends now!";
+        } else if (timeRemainingMinutes < 60) {
+          timeMessage = `Ends in ${timeRemainingMinutes} minutes`;
+        } else {
+          const hours = Math.floor(timeRemainingMinutes / 60);
+          const minutes = timeRemainingMinutes % 60;
+          timeMessage = `Ends in ${hours}h ${minutes}m`;
+        }
+        
+        await sendWeatherAlertNotification(weather.current, timeMessage);
       }
       
       // Send travelling merchant notifications (only when merchant arrives with items)
