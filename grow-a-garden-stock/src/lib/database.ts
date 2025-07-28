@@ -431,7 +431,8 @@ class Database {
       if (!token.preferences) return false;
       try {
         const prefs = JSON.parse(token.preferences);
-        return prefs["weather"] === true;
+        // Check for both "weather" and "Weather" (case insensitive)
+        return prefs["weather"] === true || prefs["Weather"] === true;
       } catch {
         return false;
       }
