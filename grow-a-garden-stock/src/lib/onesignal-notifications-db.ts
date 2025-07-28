@@ -1,7 +1,11 @@
 import database from './database.js';
 
 const ONESIGNAL_APP_ID = '7a3f0ef9-af93-4481-93e1-375183500d50';
-const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
+
+// Get API key dynamically to ensure environment variables are loaded
+function getOneSignalApiKey(): string | undefined {
+  return process.env.ONESIGNAL_API_KEY;
+}
 
 // OneSignal configuration based on official rate limits
 // https://documentation.onesignal.com/reference/rate-limits
@@ -198,7 +202,8 @@ async function sendOneSignalNotification(
   data?: Record<string, unknown>,
   retryCount = 0
 ): Promise<{ success: boolean; failedPlayerIds: string[] }> {
-  if (!ONESIGNAL_API_KEY) {
+  const apiKey = getOneSignalApiKey();
+  if (!apiKey) {
     console.error('❌ OneSignal API key not configured');
     return { success: false, failedPlayerIds: playerIds };
   }
@@ -238,7 +243,7 @@ async function sendOneSignalNotification(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+        'Authorization': `Basic ${apiKey}`
       },
       body: JSON.stringify(payload),
       signal: controller.signal
