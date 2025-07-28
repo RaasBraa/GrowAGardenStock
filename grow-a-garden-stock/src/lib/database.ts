@@ -356,7 +356,8 @@ class Database {
       }
 
       if (filters?.device_type === 'onesignal') {
-        conditions.push("token REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'");
+        // Filter for OneSignal tokens (UUID format) without using REGEXP
+        conditions.push("token LIKE '%-%-%-%-%' AND LENGTH(token) = 36");
       }
 
       if (filters?.has_preferences) {
