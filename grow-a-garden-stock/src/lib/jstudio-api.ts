@@ -80,7 +80,8 @@ class JStudioAPIService {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         headers: {
-          'User-Agent': 'GrowAGardenStock/1.0'
+          'User-Agent': 'GrowAGardenStock/1.0',
+          'jstudio-key': process.env.JSTUDIO_API_KEY || 'js_e9b170c145eab6364f2f7e08cb534ab1459f1a010eb82bb4e273a930ba9b46a7'
         }
       });
 

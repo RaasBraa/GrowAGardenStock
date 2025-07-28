@@ -108,7 +108,7 @@ class JStudioWebSocketListener {
       console.log(`🔗 Connecting to JStudio WebSocket: ${wsUrl}`);
       
       // Add JStudio API key to headers
-      const JSTUDIO_KEY = 'js_e9b170c145eab6364f2f7e08cb534ab1459f1a010eb82bb4e273a930ba9b46a7';
+      const JSTUDIO_KEY = process.env.JSTUDIO_API_KEY || 'js_e9b170c145eab6364f2f7e08cb534ab1459f1a010eb82bb4e273a930ba9b46a7';
       
       this.ws = new WebSocket(wsUrl, {
         headers: {
