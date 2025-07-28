@@ -7,11 +7,11 @@
       "cwd": ".",
       "env": {
         "NODE_ENV": "production",
-        "NODE_OPTIONS": "--max-old-space-size=768 --expose-gc"
+        "NODE_OPTIONS": "--max-old-space-size=1536 --expose-gc"
       },
       "instances": 1,
       "exec_mode": "fork",
-      "max_memory_restart": "600M",
+      "max_memory_restart": "1200M",
       "node_args": "--expose-gc",
       "autorestart": true,
       "watch": false,
@@ -30,11 +30,11 @@
       "cwd": ".",
       "env": {
         "NODE_ENV": "production",
-        "NODE_OPTIONS": "--max-old-space-size=768 --expose-gc"
+        "NODE_OPTIONS": "--max-old-space-size=1536 --expose-gc"
       },
       "instances": 1,
       "exec_mode": "fork",
-      "max_memory_restart": "600M",
+      "max_memory_restart": "1200M",
       "node_args": "--expose-gc",
       "autorestart": true,
       "watch": false,
