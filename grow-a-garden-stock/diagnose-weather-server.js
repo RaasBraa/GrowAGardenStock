@@ -42,20 +42,19 @@ async function diagnoseWeatherNotifications() {
     } else {
       console.log('❌ No tokens have weather notifications enabled!');
       
-      // Check what preferences users actually have
-      console.log('\n🔍 Checking all user preferences...');
-      const tokensWithAnyPrefs = await database.getTokens({ has_preferences: true });
+      // Just show a summary instead of listing all preferences
+      console.log('\n🔍 Summary of user preferences:');
+      console.log(`  Total users with preferences: ${tokensWithPrefs.length}`);
       
-      tokensWithAnyPrefs.forEach((token, index) => {
+      // Sample a few users to check weather preference format
+      const sampleTokens = tokensWithPrefs.slice(0, 5);
+      console.log(`  Sample of first 5 users:`);
+      sampleTokens.forEach((token, index) => {
         try {
           const prefs = JSON.parse(token.preferences);
-          console.log(`  ${index + 1}. Token: ${token.token.substring(0, 20)}...`);
-          console.log(`     Preferences: ${JSON.stringify(prefs, null, 2)}`);
-          console.log(`     Has weather: ${prefs.weather !== undefined}`);
-          console.log(`     Weather value: ${prefs.weather}`);
-          console.log('');
+          console.log(`    ${index + 1}. Has weather: ${prefs.weather !== undefined}, Weather value: ${prefs.weather}`);
         } catch {
-          console.log(`  ${index + 1}. Token: ${token.token.substring(0, 20)}... (Invalid JSON)`);
+          console.log(`    ${index + 1}. Invalid JSON preferences`);
         }
       });
     }
