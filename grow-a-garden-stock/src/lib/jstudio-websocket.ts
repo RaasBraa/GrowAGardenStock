@@ -93,6 +93,13 @@ class JStudioWebSocketListener {
   async start() {
     console.log('📡 Starting JStudio WebSocket listener...');
     await this.connect();
+    
+    // Set up ping interval to keep connection alive
+    setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.ping();
+      }
+    }, 25000); // Ping every 25 seconds
   }
 
   private async connect() {
@@ -100,7 +107,14 @@ class JStudioWebSocketListener {
       const wsUrl = `wss://websocket.joshlei.com/growagarden?user_id=${encodeURIComponent(this.userId)}`;
       console.log(`🔗 Connecting to JStudio WebSocket: ${wsUrl}`);
       
-      this.ws = new WebSocket(wsUrl);
+      // Add JStudio API key to headers
+      const JSTUDIO_KEY = 'js_e9b170c145eab6364f2f7e08cb534ab1459f1a010eb82bb4e273a930ba9b46a7';
+      
+      this.ws = new WebSocket(wsUrl, {
+        headers: {
+          'jstudio-key': JSTUDIO_KEY
+        }
+      });
       
       this.ws.on('open', () => {
         console.log('✅ JStudio WebSocket connection established.');
@@ -125,6 +139,15 @@ class JStudioWebSocketListener {
       this.ws.on('error', (error: Error) => {
         console.error('❌ JStudio WebSocket error:', error);
         this.isConnected = false;
+      });
+
+      this.ws.on('ping', (data) => {
+        console.log('🏓 Received ping from server, sending pong...');
+        this.ws?.pong(data);
+      });
+
+      this.ws.on('pong', () => {
+        console.log('🏓 Received pong from server');
       });
 
       this.ws.on('close', () => {
