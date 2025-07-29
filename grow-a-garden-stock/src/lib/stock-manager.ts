@@ -449,27 +449,36 @@ class StockManager {
     this.sendNotifications(stockId, category, items, weather, travellingMerchant, merchantName);
     
     // Send notifications for new weather events only (if this was a weather update)
+    // Only send weather notifications from the highest priority source to prevent duplicates
     if (weather && this.stockData.weather && this.stockData.weather.activeWeather.length > 0) {
+      // Check if this is the highest priority source for weather updates
+      const isHighestPrioritySource = this.isHighestPrioritySource(source);
+      
       console.log(`🌤️ Checking for new weather events to notify...`);
       console.log(`🌤️ Active weather events: ${this.stockData.weather.activeWeather.length}`);
+      console.log(`🌤️ Is highest priority source: ${isHighestPrioritySource}`);
       
-      // Only send notifications for weather events that are new or have changed
-      for (const activeWeather of this.stockData.weather.activeWeather) {
-        const weatherKey = `${activeWeather.current}-${activeWeather.endsAt}`;
-        const lastNotification = this.lastWeatherNotifications.get(activeWeather.current);
-        
-        console.log(`🌤️ Checking weather: ${activeWeather.current}`);
-        console.log(`🌤️ Current key: ${weatherKey}`);
-        console.log(`🌤️ Last notification: ${lastNotification || 'none'}`);
-        
-        if (lastNotification !== weatherKey) {
-          console.log(`🌤️ New weather event detected: ${activeWeather.current} - sending notification`);
-          await this.sendWeatherNotification(activeWeather);
-          this.lastWeatherNotifications.set(activeWeather.current, weatherKey);
-          console.log(`🌤️ Weather notification sent and tracked: ${activeWeather.current}`);
-        } else {
-          console.log(`🌤️ Weather event already notified: ${activeWeather.current} - skipping`);
+      if (isHighestPrioritySource) {
+        // Only send notifications for weather events that are new or have changed
+        for (const activeWeather of this.stockData.weather.activeWeather) {
+          const weatherKey = `${activeWeather.current}-${activeWeather.endsAt}`;
+          const lastNotification = this.lastWeatherNotifications.get(activeWeather.current);
+          
+          console.log(`🌤️ Checking weather: ${activeWeather.current}`);
+          console.log(`🌤️ Current key: ${weatherKey}`);
+          console.log(`🌤️ Last notification: ${lastNotification || 'none'}`);
+          
+          if (lastNotification !== weatherKey) {
+            console.log(`🌤️ New weather event detected: ${activeWeather.current} - sending notification`);
+            await this.sendWeatherNotification(activeWeather);
+            this.lastWeatherNotifications.set(activeWeather.current, weatherKey);
+            console.log(`🌤️ Weather notification sent and tracked: ${activeWeather.current}`);
+          } else {
+            console.log(`🌤️ Weather event already notified: ${activeWeather.current} - skipping`);
+          }
         }
+      } else {
+        console.log(`🌤️ Skipping weather notification - not highest priority source (${source})`);
       }
     }
     
@@ -876,6 +885,22 @@ class StockManager {
       sourceInfo.lastMessageReceived = new Date().toISOString();
       sourceInfo.isOnline = true;
     }
+  }
+
+  private isHighestPrioritySource(source: string): boolean {
+    const sourceConfig = this.SOURCE_PRIORITY[source as keyof typeof this.SOURCE_PRIORITY];
+    if (!sourceConfig) return false;
+    
+    // Check if this source has the highest priority (lowest priority number)
+    for (const [sourceName] of this.sources) {
+      const otherSourceConfig = this.SOURCE_PRIORITY[sourceName as keyof typeof this.SOURCE_PRIORITY];
+      if (otherSourceConfig && otherSourceConfig.priority < sourceConfig.priority) {
+        // Found a source with higher priority (lower number)
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   private checkAndClearExpiredTravellingMerchant() {
