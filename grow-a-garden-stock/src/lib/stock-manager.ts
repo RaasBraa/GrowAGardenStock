@@ -484,12 +484,12 @@ class StockManager {
     console.log(`🔍 Is weather update: ${isWeatherUpdate}`);
     console.log(`🔍 Has travelling merchant: ${travellingMerchant ? travellingMerchant.length : 0} items`);
     
-    // Special handling for weather updates - they should be treated as their own category
+    // Special handling for weather updates - check if weather data is actually new
     if (isWeatherUpdate) {
-      // For weather updates, always accept them regardless of timing
-      // Weather updates are important and should override timing restrictions
-      console.log(`🔍 Accepting weather update from ${source}`);
-      return true;
+      // For weather updates, we need to check if the data is actually new
+      // The actual data hash check will be done in shouldUpdateData
+      console.log(`🔍 Weather update detected from ${source} - will check data hash in shouldUpdateData`);
+      return true; // Let shouldUpdateData handle the actual check
     }
     
     // Special handling for travelling merchant updates - always accept them regardless of timing
@@ -602,10 +602,20 @@ class StockManager {
   }
 
   private createDataHash(category: string, items: StockItem[], weather?: WeatherInfo, travellingMerchant?: TravellingMerchantItem[], merchantName?: string): string {
+    // For weather updates, normalize the end time to prevent minor time differences from creating different hashes
+    let normalizedWeather = '';
+    if (weather) {
+      // Round the end time to the nearest minute to prevent minor time differences
+      const endTime = new Date(weather.endsAt);
+      const roundedEndTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate(), 
+        endTime.getHours(), endTime.getMinutes(), 0, 0); // Round to nearest minute
+      normalizedWeather = `${weather.current}:${roundedEndTime.toISOString()}`;
+    }
+    
     const data = {
       category,
       items: items.map(item => `${item.id}:${item.quantity}`).sort().join(','),
-      weather: weather ? `${weather.current}:${weather.endsAt}` : '',
+      weather: normalizedWeather,
       travellingMerchant: travellingMerchant ? {
         merchantName,
         items: travellingMerchant.map(item => `${item.id}:${item.quantity}`).sort().join(',')
