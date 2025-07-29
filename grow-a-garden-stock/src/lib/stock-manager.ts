@@ -559,10 +559,17 @@ class StockManager {
       return false;
     }
     
-    // Special handling for weather updates - always accept new weather data
+    // Special handling for weather updates - check if weather data is actually new
     if (category === 'seeds' && dataHash.includes('weather')) {
-      console.log(`🔍 Accepting ${source} update for ${category} - weather update`);
-      return true;
+      console.log(`🔍 Weather update detected - checking if data is new`);
+      // Only accept if the data hash is different (meaning weather actually changed)
+      if (sourceInfo.lastDataHash !== dataHash) {
+        console.log(`🔍 Accepting ${source} update for ${category} - new weather data`);
+        return true;
+      } else {
+        console.log(`🔍 Rejecting ${source} update for ${category} - same weather data`);
+        return false;
+      }
     }
     
     // Special handling for travelling merchant updates - always accept new travelling merchant data
