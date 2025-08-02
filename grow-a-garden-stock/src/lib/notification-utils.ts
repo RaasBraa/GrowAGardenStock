@@ -10,18 +10,14 @@ export const ALL_ITEMS = {
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
     "Godly Sprinkler", "Tanning Mirror", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray",
-    "Favorite Tool", "Harvest Tool", "Friendship Pot", "Medium Toy", "Medium Treat", "Levelup Lollipop"
+    "Favorite Tool", "Harvest Tool", "Friendship Pot", "Medium Toy", "Medium Treat", "Levelup Lollipop",
+    "Grandmaster Sprinkler", "Trading Ticket"
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
     "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg"
   ],
-  events: [
-    "Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", 
-    "Corrupt Radar", "Zenflare", "Zen Crate", "Sakura Bush", "Soft Sunshine", 
-    "Koi", "Zen Gnome Crate", "Spiked Mango", "Pet Shard Tranquil", 
-    "Pet Shard Corrupted", "Raiju"
-  ],
+  events: [],
   weather: [
     "Weather Alerts"
   ]
