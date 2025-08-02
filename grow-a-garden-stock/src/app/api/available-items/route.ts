@@ -22,11 +22,6 @@ export async function GET() {
         display_name: name, 
         category: 'eggs' 
       })),
-      ...Object.values(ALL_ITEMS.events).map(name => ({ 
-        item_id: name.toLowerCase().replace(/\s+/g, '_'), 
-        display_name: name, 
-        category: 'events' 
-      })),
       ...Object.values(ALL_ITEMS.weather).map(name => ({ 
         item_id: name.toLowerCase().replace(/\s+/g, '_'), 
         display_name: name, 
