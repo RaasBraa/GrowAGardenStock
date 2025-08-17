@@ -517,6 +517,43 @@ class Database {
       });
     });
   }
+  // Check if token can be updated (rate limiting)
+  async canUpdatePreferences(token: string, minIntervalSeconds: number = 30): Promise<{ canUpdate: boolean; secondsRemaining: number; lastUpdate: string }> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+
+      const sql = `SELECT last_used FROM push_tokens WHERE token = ?`;
+      
+      this.db!.get(sql, [token], (err, row: { [key: string]: unknown } | undefined) => {
+        if (err) {
+          console.error('Error checking token update eligibility:', err);
+          reject(err);
+          return;
+        }
+
+        if (!row) {
+          // Token not found, allow update
+          resolve({ canUpdate: true, secondsRemaining: 0, lastUpdate: '' });
+          return;
+        }
+
+        const lastUpdate = new Date(row.last_used as string);
+        const now = new Date();
+        const timeDiffSeconds = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
+        const canUpdate = timeDiffSeconds >= minIntervalSeconds;
+        const secondsRemaining = Math.max(0, minIntervalSeconds - timeDiffSeconds);
+
+        resolve({
+          canUpdate,
+          secondsRemaining,
+          lastUpdate: row.last_used as string
+        });
+      });
+    });
+  }
 }
 
 // Singleton instance
