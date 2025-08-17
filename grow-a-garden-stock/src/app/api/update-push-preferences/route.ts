@@ -5,9 +5,6 @@ import database from '@/lib/database';
 
 const TOKENS_PATH = path.resolve(process.cwd(), 'push-tokens.json');
 
-// Rate limiting configuration
-const PREFERENCES_UPDATE_RATE_LIMIT_SECONDS = 30; // Minimum seconds between preference updates
-
 interface PushTokenEntry {
   token: string;
   created_at: string;
@@ -129,22 +126,6 @@ export async function POST(req: NextRequest) {
       try {
         await database.initialize();
         
-        // Check rate limiting first
-        const rateLimitCheck = await database.canUpdatePreferences(token, PREFERENCES_UPDATE_RATE_LIMIT_SECONDS);
-        
-        if (!rateLimitCheck.canUpdate) {
-          return NextResponse.json(
-            { 
-              error: 'Rate limit exceeded',
-              message: `Please wait ${rateLimitCheck.secondsRemaining} seconds before updating preferences again`,
-              secondsRemaining: rateLimitCheck.secondsRemaining,
-              lastUpdate: rateLimitCheck.lastUpdate,
-              retryAfter: new Date(Date.now() + (rateLimitCheck.secondsRemaining * 1000)).toISOString()
-            }, 
-            { status: 429 } // Too Many Requests
-          );
-        }
-        
         const existingTokens = await database.getTokens();
         const existingToken = existingTokens.find(t => t.token === token);
         
@@ -201,25 +182,6 @@ export async function POST(req: NextRequest) {
           message: 'The specified token was not found in our database'
         }, 
         { status: 404 }
-      );
-    }
-    
-    // Check rate limiting for Expo tokens
-    const lastUpdate = new Date(tokenEntry.last_used);
-    const now = new Date();
-    const timeDiffSeconds = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
-    
-    if (timeDiffSeconds < PREFERENCES_UPDATE_RATE_LIMIT_SECONDS) {
-      const secondsRemaining = PREFERENCES_UPDATE_RATE_LIMIT_SECONDS - timeDiffSeconds;
-      return NextResponse.json(
-        { 
-          error: 'Rate limit exceeded',
-          message: `Please wait ${secondsRemaining} seconds before updating preferences again`,
-          secondsRemaining: secondsRemaining,
-          lastUpdate: tokenEntry.last_used,
-          retryAfter: new Date(Date.now() + (secondsRemaining * 1000)).toISOString()
-        }, 
-        { status: 429 } // Too Many Requests
       );
     }
     
