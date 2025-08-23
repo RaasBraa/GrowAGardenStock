@@ -11,7 +11,7 @@ export const ALL_ITEMS = {
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
     "Godly Sprinkler", "Tanning Mirror", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray",
     "Favorite Tool", "Harvest Tool", "Friendship Pot", "Medium Toy", "Medium Treat", "Levelup Lollipop",
-    "Grandmaster Sprinkler", "Trading Ticket"
+    "Grandmaster Sprinkler", "Trading Ticket", "Cleansing Pet Shard"
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",

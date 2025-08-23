@@ -68,6 +68,7 @@ export async function GET() {
         { id: "favorite_tool", name: "Favorite Tool", rarity: "Divine", category: "gear" },
         { id: "harvest_tool", name: "Harvest Tool", rarity: "Divine", category: "gear" },
         { id: "friendship_pot", name: "Friendship Pot", rarity: "Divine", category: "gear" },
+        { id: "cleansing_pet_shard", name: "Cleansing Pet Shard", rarity: "Divine", category: "gear" },
         // Prismatic
         { id: "levelup_lollipop", name: "Levelup Lollipop", rarity: "Prismatic", category: "gear" },
         { id: "grandmaster_sprinkler", name: "Grandmaster Sprinkler", rarity: "Prismatic", category: "gear" }
