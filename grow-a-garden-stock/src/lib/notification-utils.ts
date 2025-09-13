@@ -3,9 +3,11 @@ import database from './database';
 // All available items for notifications
 export const ALL_ITEMS = {
   seeds: [
-    "Carrot", "Strawberry", "Blueberry", "Tomato", "Cauliflower", "Corn", "Watermelon",
-    "Green Apple", "Avocado", "Banana", "Pineapple", "Kiwi", "Bell Pepper",
-    "Prickly Pear", "Loquat", "Feijoa", "Sugar Apple", "Giant Pinecone", "Elder Strawberry", "Romanesco"
+    "Carrot", "Strawberry", "Blueberry", "Orange Tulip", "Tomato", "Corn", "Daffodil",
+    "Watermelon", "Pumpkin", "Apple", "Bamboo", "Broccoli", "Coconut", "Cactus", 
+    "Dragon Fruit", "Mango", "Potato", "Grape", "Mushroom", "Pepper", "Cacao", 
+    "Brussels Sprout", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", 
+    "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango"
   ],
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
@@ -15,7 +17,8 @@ export const ALL_ITEMS = {
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
-    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg"
+    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg",
+    "Pet Name Reroller", "Pet Lead", "Rainbow Lollipop"
   ],
   events: [],
   weather: [

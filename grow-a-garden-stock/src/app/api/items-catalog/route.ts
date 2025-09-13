@@ -14,23 +14,26 @@ export async function GET() {
         { id: "orange_tulip", name: "Orange Tulip", rarity: "Uncommon", category: "seeds" },
         // Rare
         { id: "tomato", name: "Tomato", rarity: "Rare", category: "seeds" },
-        { id: "daffodil", name: "Daffodil", rarity: "Rare", category: "seeds" },
         { id: "corn", name: "Corn", rarity: "Rare", category: "seeds" },
+        { id: "daffodil", name: "Daffodil", rarity: "Rare", category: "seeds" },
         // Legendary
         { id: "watermelon", name: "Watermelon", rarity: "Legendary", category: "seeds" },
         { id: "pumpkin", name: "Pumpkin", rarity: "Legendary", category: "seeds" },
         { id: "apple", name: "Apple", rarity: "Legendary", category: "seeds" },
         { id: "bamboo", name: "Bamboo", rarity: "Legendary", category: "seeds" },
+        { id: "broccoli", name: "Broccoli", rarity: "Legendary", category: "seeds" },
         // Mythical
         { id: "coconut", name: "Coconut", rarity: "Mythical", category: "seeds" },
         { id: "cactus", name: "Cactus", rarity: "Mythical", category: "seeds" },
         { id: "dragon_fruit", name: "Dragon Fruit", rarity: "Mythical", category: "seeds" },
         { id: "mango", name: "Mango", rarity: "Mythical", category: "seeds" },
+        { id: "potato", name: "Potato", rarity: "Mythical", category: "seeds" },
         // Divine
         { id: "grape", name: "Grape", rarity: "Divine", category: "seeds" },
         { id: "mushroom", name: "Mushroom", rarity: "Divine", category: "seeds" },
         { id: "pepper", name: "Pepper", rarity: "Divine", category: "seeds" },
         { id: "cacao", name: "Cacao", rarity: "Divine", category: "seeds" },
+        { id: "brussels_sprout", name: "Brussels Sprout", rarity: "Divine", category: "seeds" },
         // Prismatic
         { id: "beanstalk", name: "Beanstalk", rarity: "Prismatic", category: "seeds" },
         { id: "ember_lily", name: "Ember Lily", rarity: "Prismatic", category: "seeds" },
@@ -38,9 +41,10 @@ export async function GET() {
         { id: "burning_bud", name: "Burning Bud", rarity: "Prismatic", category: "seeds" },
         { id: "giant_pinecone", name: "Giant Pinecone", rarity: "Prismatic", category: "seeds" },
         { id: "elder_strawberry", name: "Elder Strawberry", rarity: "Prismatic", category: "seeds" },
-        { id: "romanesco", name: "Romanesco", rarity: "Prismatic", category: "seeds" }
+        { id: "romanesco", name: "Romanesco", rarity: "Prismatic", category: "seeds" },
+        { id: "cocomango", name: "Cocomango", rarity: "Prismatic", category: "seeds" }
       ],
-      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "beanstalk", "ember_lily", "sugar_apple", "burning_bud", "giant_pinecone", "elder_strawberry", "romanesco"]
+      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "brussels_sprout", "beanstalk", "ember_lily", "sugar_apple", "burning_bud", "giant_pinecone", "elder_strawberry", "romanesco", "cocomango"]
     },
     gear: {
       name: "Gear",
@@ -94,9 +98,14 @@ export async function GET() {
         { id: "paradise_egg", name: "Paradise Egg", rarity: "Mythical", category: "eggs" },
         { id: "bee_egg", name: "Bee Egg", rarity: "Mythical", category: "eggs" },
         // Divine
-        { id: "bug_egg", name: "Bug Egg", rarity: "Divine", category: "eggs" }
+        { id: "bug_egg", name: "Bug Egg", rarity: "Divine", category: "eggs" },
+        // Legendary (Pet Items)
+        { id: "pet_name_reroller", name: "Pet Name Reroller", rarity: "Legendary", category: "eggs" },
+        { id: "pet_lead", name: "Pet Lead", rarity: "Legendary", category: "eggs" },
+        // Prismatic (Pet Items)
+        { id: "rainbow_lollipop", name: "Rainbow Lollipop", rarity: "Prismatic", category: "eggs" }
       ],
-      defaultEnabled: ["mythical_egg", "paradise_egg", "bug_egg"]
+      defaultEnabled: ["mythical_egg", "paradise_egg", "bug_egg", "pet_name_reroller", "pet_lead", "rainbow_lollipop"]
     },
     cosmetics: {
       name: "Cosmetics",
