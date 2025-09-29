@@ -50,7 +50,7 @@ export const ALL_ITEMS = {
     "Watermelon", "Pumpkin", "Apple", "Bamboo", "Broccoli", "Coconut", "Cactus", 
     "Dragon Fruit", "Mango", "Potato", "Grape", "Mushroom", "Pepper", "Cacao", 
     "Brussels Sprout", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", 
-    "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango"
+    "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango", "Crimson Thorn"
   ],
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
@@ -60,7 +60,7 @@ export const ALL_ITEMS = {
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
-    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg",
+    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg", "Jungle Egg",
     "Pet Name Reroller", "Pet Lead", "Rainbow Lollipop"
   ],
   events: [

@@ -42,9 +42,10 @@ export async function GET() {
         { id: "giant_pinecone", name: "Giant Pinecone", rarity: "Prismatic", category: "seeds" },
         { id: "elder_strawberry", name: "Elder Strawberry", rarity: "Prismatic", category: "seeds" },
         { id: "romanesco", name: "Romanesco", rarity: "Prismatic", category: "seeds" },
-        { id: "cocomango", name: "Cocomango", rarity: "Prismatic", category: "seeds" }
+        { id: "cocomango", name: "Cocomango", rarity: "Prismatic", category: "seeds" },
+        { id: "crimson_thorn", name: "Crimson Thorn", rarity: "Prismatic", category: "seeds" }
       ],
-      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "brussels_sprout", "beanstalk", "ember_lily", "sugar_apple", "burning_bud", "giant_pinecone", "elder_strawberry", "romanesco", "cocomango"]
+      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "brussels_sprout", "beanstalk", "ember_lily", "sugar_apple", "burning_bud", "giant_pinecone", "elder_strawberry", "romanesco", "cocomango", "crimson_thorn"]
     },
     gear: {
       name: "Gear",
@@ -99,13 +100,14 @@ export async function GET() {
         { id: "bee_egg", name: "Bee Egg", rarity: "Mythical", category: "eggs" },
         // Divine
         { id: "bug_egg", name: "Bug Egg", rarity: "Divine", category: "eggs" },
+        { id: "jungle_egg", name: "Jungle Egg", rarity: "Divine", category: "eggs" },
         // Legendary (Pet Items)
         { id: "pet_name_reroller", name: "Pet Name Reroller", rarity: "Legendary", category: "eggs" },
         { id: "pet_lead", name: "Pet Lead", rarity: "Legendary", category: "eggs" },
         // Prismatic (Pet Items)
         { id: "rainbow_lollipop", name: "Rainbow Lollipop", rarity: "Prismatic", category: "eggs" }
       ],
-      defaultEnabled: ["mythical_egg", "paradise_egg", "bug_egg", "pet_name_reroller", "pet_lead", "rainbow_lollipop"]
+      defaultEnabled: ["mythical_egg", "paradise_egg", "bug_egg", "jungle_egg", "pet_name_reroller", "pet_lead", "rainbow_lollipop"]
     },
     cosmetics: {
       name: "Cosmetics",
