@@ -7,7 +7,7 @@ export const ALL_ITEMS = {
     "Watermelon", "Pumpkin", "Apple", "Bamboo", "Broccoli", "Coconut", "Cactus", 
     "Dragon Fruit", "Mango", "Potato", "Grape", "Mushroom", "Pepper", "Cacao", 
     "Brussels Sprout", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", 
-    "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango", "Crimson Thorn"
+    "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango", "Crimson Thorn", "Great Pumpkin"
   ],
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
