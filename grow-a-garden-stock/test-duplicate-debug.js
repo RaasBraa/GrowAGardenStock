@@ -15,7 +15,7 @@ console.log('Last Daily Seed Reset:', duplicateHistory.lastDailySeedReset);
 console.log('Total Items Tracked:', duplicateHistory.history.length);
 
 // Check for specific items that might be causing issues
-const problemItems = ['ember lily', 'broccoli', 'green apple'];
+const problemItems = ['ember_lily', 'broccoli', 'green apple'];
 for (const itemId of problemItems) {
   const itemHistory = duplicateHistory.history.find(([id]) => id === itemId);
   if (itemHistory) {
@@ -70,6 +70,6 @@ function testFiltering(itemId, quantity) {
 
 // Test the problematic items
 console.log('\n🧪 Testing Filter Logic:');
-testFiltering('ember lily', 1);
+testFiltering('ember_lily', 1);
 testFiltering('broccoli', 1);
 testFiltering('green apple', 1);
