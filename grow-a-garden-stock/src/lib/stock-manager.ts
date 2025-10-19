@@ -80,8 +80,8 @@ class StockManager {
   
   // Duplicate item detection to prevent spam notifications
   private itemAppearanceHistory: Map<string, Array<{ timestamp: number; quantity: number }>> = new Map();
-  private readonly DUPLICATE_DETECTION_WINDOW = 10 * 60 * 1000; // 10 minutes
-  private readonly MAX_SAME_QUANTITY_APPEARANCES = 3; // Max appearances with same quantity before filtering
+  private readonly DUPLICATE_DETECTION_WINDOW = 5 * 60 * 1000; // 5 minutes (shorter window for frequent restarts)
+  private readonly MAX_SAME_QUANTITY_APPEARANCES = 2; // Max appearances with same quantity before filtering (more aggressive)
   private duplicateHistoryPath: string;
   private lastDailySeedReset: string = ''; // Track when daily seeds last changed
   
