@@ -82,6 +82,8 @@ class StockManager {
   private itemAppearanceHistory: Map<string, Array<{ timestamp: number; quantity: number }>> = new Map();
   private readonly DUPLICATE_DETECTION_WINDOW = 10 * 60 * 1000; // 10 minutes
   private readonly MAX_SAME_QUANTITY_APPEARANCES = 3; // Max appearances with same quantity before filtering
+  private duplicateHistoryPath: string;
+  private lastDailySeedReset: string = ''; // Track when daily seeds last changed
   
   // Rate limiting to prevent server overload
   private lastUpdateTime: { [key: string]: number } = {};
@@ -116,7 +118,9 @@ class StockManager {
 
   constructor() {
     this.stockDataPath = path.resolve(process.cwd(), 'stock-data.json');
+    this.duplicateHistoryPath = path.resolve(process.cwd(), 'duplicate-history.json');
     this.stockData = this.loadOrCreateStockData();
+    this.loadDuplicateHistory();
     this.initializeSources();
   }
 
@@ -258,6 +262,9 @@ class StockManager {
     recentHistory.push({ timestamp: now, quantity });
     this.itemAppearanceHistory.set(itemKey, recentHistory);
     
+    // Save the updated history
+    this.saveDuplicateHistory();
+    
     // Filter if this quantity has appeared too many times recently
     const shouldFilter = sameQuantityCount >= this.MAX_SAME_QUANTITY_APPEARANCES;
     
@@ -266,6 +273,62 @@ class StockManager {
     }
     
     return shouldFilter;
+  }
+
+  /**
+   * Load duplicate detection history from file
+   */
+  private loadDuplicateHistory(): void {
+    try {
+      if (fs.existsSync(this.duplicateHistoryPath)) {
+        const data = fs.readFileSync(this.duplicateHistoryPath, 'utf-8');
+        const parsedData = JSON.parse(data);
+        
+        // Check if daily seeds have changed (new day)
+        const today = new Date().toDateString();
+        if (parsedData.lastDailySeedReset !== today) {
+          console.log('🌅 New day detected - clearing duplicate history for fresh daily seeds');
+          this.itemAppearanceHistory.clear();
+          this.lastDailySeedReset = today;
+          this.saveDuplicateHistory();
+          return;
+        }
+        
+        // Load the history
+        this.itemAppearanceHistory = new Map(parsedData.history);
+        this.lastDailySeedReset = parsedData.lastDailySeedReset || today;
+        
+        console.log(`📚 Loaded duplicate history for ${this.itemAppearanceHistory.size} items`);
+      } else {
+        console.log('📚 No duplicate history file found - starting fresh');
+        this.lastDailySeedReset = new Date().toDateString();
+      }
+    } catch (error) {
+      console.error('❌ Error loading duplicate history:', error);
+      this.itemAppearanceHistory.clear();
+      this.lastDailySeedReset = new Date().toDateString();
+    }
+  }
+
+  /**
+   * Save duplicate detection history to file
+   */
+  private saveDuplicateHistory(): void {
+    try {
+      const data = {
+        lastDailySeedReset: this.lastDailySeedReset,
+        history: Array.from(this.itemAppearanceHistory.entries()),
+        lastSaved: new Date().toISOString()
+      };
+      
+      // Atomic write to prevent corruption
+      const tempPath = `${this.duplicateHistoryPath}.tmp`;
+      fs.writeFileSync(tempPath, JSON.stringify(data, null, 2));
+      fs.renameSync(tempPath, this.duplicateHistoryPath);
+      
+    } catch (error) {
+      console.error('❌ Error saving duplicate history:', error);
+    }
   }
 
   /**
@@ -284,6 +347,9 @@ class StockManager {
         this.itemAppearanceHistory.set(itemKey, recentHistory);
       }
     }
+    
+    // Save the cleaned history
+    this.saveDuplicateHistory();
   }
 
   public async start() {
@@ -780,11 +846,13 @@ class StockManager {
             const shouldNotify = this.shouldNotifyForItem();
             console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
             
-            // Check for duplicate filtering before sending notification
-            const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
-            if (shouldFilterDuplicate) {
-              console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
-              continue;
+            // Only apply duplicate filtering to seeds (where daily seeds cause spam)
+            if (category === 'seeds') {
+              const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
+              if (shouldFilterDuplicate) {
+                console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
+                continue;
+              }
             }
             
             if (shouldNotify) {
@@ -807,13 +875,7 @@ class StockManager {
             const shouldNotify = this.shouldNotifyForItem();
             console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
             
-            // Check for duplicate filtering before sending notification
-            const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
-            if (shouldFilterDuplicate) {
-              console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
-              continue;
-            }
-            
+            // Events don't need duplicate filtering (they're not daily seeds)
             if (shouldNotify) {
               await sendItemNotification(item.name, item.quantity, category);
             }
