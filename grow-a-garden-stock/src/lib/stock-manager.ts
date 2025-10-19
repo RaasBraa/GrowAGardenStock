@@ -255,21 +255,21 @@ class StockManager {
     const cutoffTime = now - this.DUPLICATE_DETECTION_WINDOW;
     const recentHistory = history.filter(entry => entry.timestamp > cutoffTime);
     
-    // Count appearances with the same quantity in the recent window
+    // Count appearances with the same quantity in the recent window (BEFORE adding current)
     const sameQuantityCount = recentHistory.filter(entry => entry.quantity === quantity).length;
     
-    // Add current appearance to history
+    // Filter if this quantity has appeared too many times recently
+    const shouldFilter = sameQuantityCount >= this.MAX_SAME_QUANTITY_APPEARANCES;
+    
+    // Always add current appearance to history (for tracking purposes)
     recentHistory.push({ timestamp: now, quantity });
     this.itemAppearanceHistory.set(itemKey, recentHistory);
     
     // Save the updated history
     this.saveDuplicateHistory();
     
-    // Filter if this quantity has appeared too many times recently
-    const shouldFilter = sameQuantityCount >= this.MAX_SAME_QUANTITY_APPEARANCES;
-    
     if (shouldFilter) {
-      console.log(`🚫 Filtering duplicate item: ${itemId} (quantity: ${quantity}) - appeared ${sameQuantityCount + 1} times with same quantity in ${this.DUPLICATE_DETECTION_WINDOW / 60000} minutes`);
+      console.log(`🚫 Filtering duplicate seed: ${itemId} (quantity: ${quantity}) - appeared ${sameQuantityCount + 1} times with same quantity in ${this.DUPLICATE_DETECTION_WINDOW / 60000} minutes`);
     }
     
     return shouldFilter;
@@ -848,7 +848,9 @@ class StockManager {
             
             // Only apply duplicate filtering to seeds (where daily seeds cause spam)
             if (category === 'seeds') {
+              console.log(`🔍 Checking duplicate filter for ${item.name} (${item.id}, quantity: ${item.quantity})`);
               const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
+              console.log(`🔍 Duplicate filter result for ${item.name}: ${shouldFilterDuplicate}`);
               if (shouldFilterDuplicate) {
                 console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
                 continue;
