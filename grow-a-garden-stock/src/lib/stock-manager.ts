@@ -78,6 +78,11 @@ class StockManager {
   private lastTravellingMerchantNotification: string | null = null; // Track last notification to prevent duplicates
   private lastWeatherNotifications: Map<string, string> = new Map(); // Track last weather notification for each type
   
+  // Duplicate item detection to prevent spam notifications
+  private itemAppearanceHistory: Map<string, Array<{ timestamp: number; quantity: number }>> = new Map();
+  private readonly DUPLICATE_DETECTION_WINDOW = 10 * 60 * 1000; // 10 minutes
+  private readonly MAX_SAME_QUANTITY_APPEARANCES = 3; // Max appearances with same quantity before filtering
+  
   // Rate limiting to prevent server overload
   private lastUpdateTime: { [key: string]: number } = {};
   private readonly MIN_UPDATE_INTERVAL = 2000; // 2 seconds between updates for same category
@@ -227,6 +232,60 @@ class StockManager {
     });
   }
 
+  /**
+   * Check if an item should be filtered due to frequent appearances with same quantity
+   * This prevents spam notifications for "daily seeds" that refresh frequently
+   */
+  private shouldFilterDuplicateItem(itemId: string, quantity: number): boolean {
+    const now = Date.now();
+    const itemKey = `${itemId}`;
+    
+    // Get or create appearance history for this item
+    if (!this.itemAppearanceHistory.has(itemKey)) {
+      this.itemAppearanceHistory.set(itemKey, []);
+    }
+    
+    const history = this.itemAppearanceHistory.get(itemKey)!;
+    
+    // Clean old entries outside the detection window
+    const cutoffTime = now - this.DUPLICATE_DETECTION_WINDOW;
+    const recentHistory = history.filter(entry => entry.timestamp > cutoffTime);
+    
+    // Count appearances with the same quantity in the recent window
+    const sameQuantityCount = recentHistory.filter(entry => entry.quantity === quantity).length;
+    
+    // Add current appearance to history
+    recentHistory.push({ timestamp: now, quantity });
+    this.itemAppearanceHistory.set(itemKey, recentHistory);
+    
+    // Filter if this quantity has appeared too many times recently
+    const shouldFilter = sameQuantityCount >= this.MAX_SAME_QUANTITY_APPEARANCES;
+    
+    if (shouldFilter) {
+      console.log(`🚫 Filtering duplicate item: ${itemId} (quantity: ${quantity}) - appeared ${sameQuantityCount + 1} times with same quantity in ${this.DUPLICATE_DETECTION_WINDOW / 60000} minutes`);
+    }
+    
+    return shouldFilter;
+  }
+
+  /**
+   * Clean up old appearance history to prevent memory leaks
+   */
+  private cleanupAppearanceHistory(): void {
+    const now = Date.now();
+    const cutoffTime = now - this.DUPLICATE_DETECTION_WINDOW;
+    
+    for (const [itemKey, history] of this.itemAppearanceHistory.entries()) {
+      const recentHistory = history.filter(entry => entry.timestamp > cutoffTime);
+      
+      if (recentHistory.length === 0) {
+        this.itemAppearanceHistory.delete(itemKey);
+      } else {
+        this.itemAppearanceHistory.set(itemKey, recentHistory);
+      }
+    }
+  }
+
   public async start() {
     console.log('🚀 Starting Stock Manager with multi-source coordination...');
     
@@ -245,6 +304,7 @@ class StockManager {
     setInterval(() => {
       this.validateDataConsistency();
       this.checkAndClearExpiredTravellingMerchant();
+      this.cleanupAppearanceHistory(); // Clean up duplicate detection history
     }, 60000); // Check every 60 seconds instead of 30
     
     console.log('✅ Stock Manager started successfully!');
@@ -719,6 +779,14 @@ class StockManager {
           for (const item of items) {
             const shouldNotify = this.shouldNotifyForItem();
             console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
+            
+            // Check for duplicate filtering before sending notification
+            const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
+            if (shouldFilterDuplicate) {
+              console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
+              continue;
+            }
+            
             if (shouldNotify) {
               await sendItemNotification(item.name, item.quantity, category);
             }
@@ -738,6 +806,14 @@ class StockManager {
           for (const item of items) {
             const shouldNotify = this.shouldNotifyForItem();
             console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
+            
+            // Check for duplicate filtering before sending notification
+            const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
+            if (shouldFilterDuplicate) {
+              console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
+              continue;
+            }
+            
             if (shouldNotify) {
               await sendItemNotification(item.name, item.quantity, category);
             }

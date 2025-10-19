@@ -1,0 +1,1234 @@
+[2025-10-19T09:52:42.837Z] 🧪 Testing WebSocket Daily Seeds Structure...
+[2025-10-19T09:52:42.840Z] 🔗 Connecting to WebSocket...
+[2025-10-19T09:52:42.840Z] 📁 Output will be saved to: websocket-test-output.txt
+[2025-10-19T09:52:43.249Z] ✅ WebSocket connected
+[2025-10-19T09:52:43.249Z] 📡 Listening for data...
+[2025-10-19T09:52:43.353Z] 
+📥 Message 1:
+[2025-10-19T09:52:43.353Z] 📊 Raw message keys: seed_stock, gear_stock, egg_stock, cosmetic_stock, eventshop_stock, weather, notification, travelingmerchant_stock
+[2025-10-19T09:52:43.354Z] 📦 WEATHER data detected: object Array with 91 items
+[2025-10-19T09:52:43.354Z] 
+📋 FULL MESSAGE STRUCTURE:
+[2025-10-19T09:52:43.355Z] {
+  "seed_stock": [
+    {
+      "item_id": "carrot",
+      "display_name": "Carrot",
+      "quantity": 12,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/carrot"
+    },
+    {
+      "item_id": "bamboo",
+      "display_name": "Bamboo",
+      "quantity": 13,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/bamboo"
+    },
+    {
+      "item_id": "strawberry",
+      "display_name": "Strawberry",
+      "quantity": 5,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/strawberry"
+    },
+    {
+      "item_id": "broccoli",
+      "display_name": "Broccoli",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/broccoli"
+    },
+    {
+      "item_id": "brussels_sprout",
+      "display_name": "Brussels Sprout",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/brussels_sprout"
+    },
+    {
+      "item_id": "tomato",
+      "display_name": "Tomato",
+      "quantity": 2,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tomato"
+    },
+    {
+      "item_id": "blueberry",
+      "display_name": "Blueberry",
+      "quantity": 3,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/blueberry"
+    },
+    {
+      "item_id": "rafflesia",
+      "display_name": "Rafflesia",
+      "quantity": 3,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/rafflesia"
+    },
+    {
+      "item_id": "cauliflower",
+      "display_name": "Cauliflower",
+      "quantity": 4,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/cauliflower"
+    },
+    {
+      "item_id": "ember_lily",
+      "display_name": "Ember Lily",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/ember_lily"
+    },
+    {
+      "item_id": "green_apple",
+      "display_name": "Green Apple",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/green_apple"
+    }
+  ],
+  "gear_stock": [
+    {
+      "item_id": "trading_ticket",
+      "display_name": "Trading Ticket",
+      "quantity": 2,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/trading_ticket"
+    },
+    {
+      "item_id": "recall_wrench",
+      "display_name": "Recall Wrench",
+      "quantity": 3,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/recall_wrench"
+    },
+    {
+      "item_id": "favorite_tool",
+      "display_name": "Favorite Tool",
+      "quantity": 2,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/favorite_tool"
+    },
+    {
+      "item_id": "trowel",
+      "display_name": "Trowel",
+      "quantity": 3,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/trowel"
+    },
+    {
+      "item_id": "watering_can",
+      "display_name": "Watering Can",
+      "quantity": 3,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/watering_can"
+    },
+    {
+      "item_id": "harvest_tool",
+      "display_name": "Harvest Tool",
+      "quantity": 3,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760867861,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T09:57:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/harvest_tool"
+    }
+  ],
+  "egg_stock": [
+    {
+      "item_id": "common_egg",
+      "display_name": "Common Egg",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760869361,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T10:22:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/common_egg"
+    },
+    {
+      "item_id": "common_egg",
+      "display_name": "Common Egg",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760869361,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T10:22:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/common_egg"
+    },
+    {
+      "item_id": "common_egg",
+      "display_name": "Common Egg",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760869361,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T10:22:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/common_egg"
+    },
+    {
+      "item_id": "pet_name_reroller",
+      "display_name": "Pet Name Reroller",
+      "quantity": 2,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760869361,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T10:22:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/pet_name_reroller"
+    }
+  ],
+  "cosmetic_stock": [
+    {
+      "item_id": "sign_crate",
+      "display_name": "Sign Crate",
+      "quantity": 2,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/sign_crate"
+    },
+    {
+      "item_id": "brick_stack",
+      "display_name": "Brick Stack",
+      "quantity": 4,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/brick_stack"
+    },
+    {
+      "item_id": "long_stone_table",
+      "display_name": "Long Stone Table",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/long_stone_table"
+    },
+    {
+      "item_id": "small_stone_pad",
+      "display_name": "Small Stone Pad",
+      "quantity": 5,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/small_stone_pad"
+    },
+    {
+      "item_id": "medium_stone_table",
+      "display_name": "Medium Stone Table",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/medium_stone_table"
+    },
+    {
+      "item_id": "light_on_ground",
+      "display_name": "Light On Ground",
+      "quantity": 3,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/light_on_ground"
+    },
+    {
+      "item_id": "small_wood_flooring",
+      "display_name": "Small Wood Flooring",
+      "quantity": 4,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/small_wood_flooring"
+    },
+    {
+      "item_id": "flat_canopy",
+      "display_name": "Flat Canopy",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/flat_canopy"
+    },
+    {
+      "item_id": "large_wood_table",
+      "display_name": "Large Wood Table",
+      "quantity": 1,
+      "start_date_unix": 1760867561,
+      "end_date_unix": 1760881961,
+      "Date_Start": "2025-10-19T09:52:41.000Z",
+      "Date_End": "2025-10-19T13:52:41.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/large_wood_table"
+    }
+  ],
+  "eventshop_stock": [
+    {
+      "item_id": "zen_seed_pack",
+      "display_name": "Zen Seed Pack",
+      "quantity": 2,
+      "start_date_unix": 1759813403,
+      "end_date_unix": 1759815203,
+      "Date_Start": "2025-10-07T05:03:23.000Z",
+      "Date_End": "2025-10-07T05:33:23.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/zen_seed_pack"
+    },
+    {
+      "item_id": "zen_sand",
+      "display_name": "Zen Sand",
+      "quantity": 2,
+      "start_date_unix": 1759813403,
+      "end_date_unix": 1759815203,
+      "Date_Start": "2025-10-07T05:03:23.000Z",
+      "Date_End": "2025-10-07T05:33:23.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/zen_sand"
+    },
+    {
+      "item_id": "tranquil_radar",
+      "display_name": "Tranquil Radar",
+      "quantity": 1,
+      "start_date_unix": 1759813403,
+      "end_date_unix": 1759815203,
+      "Date_Start": "2025-10-07T05:03:23.000Z",
+      "Date_End": "2025-10-07T05:33:23.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tranquil_radar"
+    },
+    {
+      "item_id": "hot_spring",
+      "display_name": "Hot Spring",
+      "quantity": 1,
+      "start_date_unix": 1759813403,
+      "end_date_unix": 1759815203,
+      "Date_Start": "2025-10-07T05:03:23.000Z",
+      "Date_End": "2025-10-07T05:33:23.000Z",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/hot_spring"
+    }
+  ],
+  "weather": [
+    {
+      "weather_id": "rain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Rain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/rain"
+    },
+    {
+      "weather_id": "heatwave",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Heatwave",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/heatwave"
+    },
+    {
+      "weather_id": "summerharvest",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 600,
+      "start_duration_unix": 0,
+      "weather_name": "SummerHarvest",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/summerharvest"
+    },
+    {
+      "weather_id": "tornado",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Tornado",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tornado"
+    },
+    {
+      "weather_id": "windy",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Windy",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/windy"
+    },
+    {
+      "weather_id": "auroraborealis",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "AuroraBorealis",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/auroraborealis"
+    },
+    {
+      "weather_id": "tropicalrain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 210,
+      "start_duration_unix": 0,
+      "weather_name": "TropicalRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tropicalrain"
+    },
+    {
+      "weather_id": "nightevent",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 600,
+      "start_duration_unix": 0,
+      "weather_name": "NightEvent",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/nightevent"
+    },
+    {
+      "weather_id": "sungod",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "SunGod",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/sungod"
+    },
+    {
+      "weather_id": "megaharvest",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 600,
+      "start_duration_unix": 0,
+      "weather_name": "MegaHarvest",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/megaharvest"
+    },
+    {
+      "weather_id": "gale",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Gale",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/gale"
+    },
+    {
+      "weather_id": "thunderstorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Thunderstorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/thunderstorm"
+    },
+    {
+      "weather_id": "bloodmoonevent",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 600,
+      "start_duration_unix": 0,
+      "weather_name": "BloodMoonEvent",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/bloodmoonevent"
+    },
+    {
+      "weather_id": "meteorshower",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "MeteorShower",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/meteorshower"
+    },
+    {
+      "weather_id": "spacetravel",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 65,
+      "start_duration_unix": 0,
+      "weather_name": "SpaceTravel",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/spacetravel"
+    },
+    {
+      "weather_id": "disco",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "Disco",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/disco"
+    },
+    {
+      "weather_id": "djjhai",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "DJJhai",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/djjhai"
+    },
+    {
+      "weather_id": "blackhole",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "Blackhole",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/blackhole"
+    },
+    {
+      "weather_id": "jandelstorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "JandelStorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelstorm"
+    },
+    {
+      "weather_id": "sandstorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Sandstorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/sandstorm"
+    },
+    {
+      "weather_id": "djsandstorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "DJSandstorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/djsandstorm"
+    },
+    {
+      "weather_id": "volcano",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "Volcano",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/volcano"
+    },
+    {
+      "weather_id": "underthesea",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "UnderTheSea",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/underthesea"
+    },
+    {
+      "weather_id": "alieninvasion",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "AlienInvasion",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/alieninvasion"
+    },
+    {
+      "weather_id": "jandellazer",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "JandelLazer",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandellazer"
+    },
+    {
+      "weather_id": "obby",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "Obby",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/obby"
+    },
+    {
+      "weather_id": "poolparty",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "PoolParty",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/poolparty"
+    },
+    {
+      "weather_id": "jandelzombie",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "JandelZombie",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelzombie"
+    },
+    {
+      "weather_id": "frost",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Frost",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/frost"
+    },
+    {
+      "weather_id": "radioactivecarrot",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "RadioactiveCarrot",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/radioactivecarrot"
+    },
+    {
+      "weather_id": "armageddon",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "Armageddon",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/armageddon"
+    },
+    {
+      "weather_id": "zenaura",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 600,
+      "start_duration_unix": 0,
+      "weather_name": "ZenAura",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/zenaura"
+    },
+    {
+      "weather_id": "crystalbeams",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "CrystalBeams",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/crystalbeams"
+    },
+    {
+      "weather_id": "jandelfloat",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "JandelFloat",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelfloat"
+    },
+    {
+      "weather_id": "chickenrain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "ChickenRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/chickenrain"
+    },
+    {
+      "weather_id": "tk_routerunner",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "TK_RouteRunner",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tk_routerunner"
+    },
+    {
+      "weather_id": "tk_moneyrain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "TK_MoneyRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tk_moneyrain"
+    },
+    {
+      "weather_id": "tk_lightningstorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "TK_LightningStorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tk_lightningstorm"
+    },
+    {
+      "weather_id": "corruptzenaura",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 600,
+      "start_duration_unix": 0,
+      "weather_name": "CorruptZenAura",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/corruptzenaura"
+    },
+    {
+      "weather_id": "jandelkatana",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 15,
+      "start_duration_unix": 0,
+      "weather_name": "JandelKatana",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelkatana"
+    },
+    {
+      "weather_id": "acidrain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "AcidRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/acidrain"
+    },
+    {
+      "weather_id": "meteorstrike",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "MeteorStrike",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/meteorstrike"
+    },
+    {
+      "weather_id": "flamingofloat",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "FlamingoFloat",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/flamingofloat"
+    },
+    {
+      "weather_id": "flamingolazer",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "FlamingoLazer",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/flamingolazer"
+    },
+    {
+      "weather_id": "junkbotraid",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "JunkbotRaid",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/junkbotraid"
+    },
+    {
+      "weather_id": "boil",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Boil",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/boil"
+    },
+    {
+      "weather_id": "oil",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Oil",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/oil"
+    },
+    {
+      "weather_id": "kitchenstorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 450,
+      "start_duration_unix": 0,
+      "weather_name": "KitchenStorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/kitchenstorm"
+    },
+    {
+      "weather_id": "solareclipse",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "SolarEclipse",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/solareclipse"
+    },
+    {
+      "weather_id": "stoplight",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 150,
+      "start_duration_unix": 0,
+      "weather_name": "Stoplight",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/stoplight"
+    },
+    {
+      "weather_id": "chocolaterain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "ChocolateRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/chocolaterain"
+    },
+    {
+      "weather_id": "boomboxparty",
+      "weather_name": "Boombox Party",
+      "duration": 0,
+      "start_duration_unix": 0,
+      "end_duration_unix": 0,
+      "active": false,
+      "icon": "https://api.joshlei.com/v2/growagarden/image/boomboxparty"
+    },
+    {
+      "weather_id": "brainrot_stampede",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "Brainrot Stampede",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/brainrot_stampede"
+    },
+    {
+      "weather_id": "brainrot_portal",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 278.2,
+      "start_duration_unix": 0,
+      "weather_name": "Brainrot Portal",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/brainrot_portal"
+    },
+    {
+      "weather_id": "dissonant",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "Dissonant",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/dissonant"
+    },
+    {
+      "weather_id": "beanaura",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "Beanaura",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/beanaura"
+    },
+    {
+      "weather_id": "fairies",
+      "weather_name": "fairies",
+      "duration": 0,
+      "start_duration_unix": 0,
+      "end_duration_unix": 0,
+      "active": false,
+      "icon": "https://api.joshlei.com/v2/growagarden/image/fairies"
+    },
+    {
+      "weather_id": "jandelufo",
+      "weather_name": "Jandel UFO",
+      "duration": 0,
+      "start_duration_unix": 0,
+      "end_duration_unix": 0,
+      "active": false,
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelufo"
+    },
+    {
+      "weather_id": "jandelwaldo",
+      "weather_name": "Jandel Waldo",
+      "duration": 0,
+      "start_duration_unix": 0,
+      "end_duration_unix": 0,
+      "active": false,
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelwaldo"
+    },
+    {
+      "weather_id": "pyramidobby",
+      "weather_name": "Pyramid Obby",
+      "duration": 0,
+      "start_duration_unix": 0,
+      "end_duration_unix": 0,
+      "active": false,
+      "icon": "https://api.joshlei.com/v2/growagarden/image/pyramidobby"
+    },
+    {
+      "weather_id": "beanaura",
+      "weather_name": "Bean Aura",
+      "duration": 0,
+      "start_duration_unix": 0,
+      "end_duration_unix": 0,
+      "active": false,
+      "icon": "https://api.joshlei.com/v2/growagarden/image/beanaura"
+    },
+    {
+      "weather_id": "boomboxparty",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 100,
+      "start_duration_unix": 0,
+      "weather_name": "BoomboxParty",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/boomboxparty"
+    },
+    {
+      "weather_id": "jandelwaldo",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "JandelWaldo",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelwaldo"
+    },
+    {
+      "weather_id": "wateryourgardens",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 100,
+      "start_duration_unix": 0,
+      "weather_name": "WaterYourGardens",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/wateryourgardens"
+    },
+    {
+      "weather_id": "earthquake",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "Earthquake",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/earthquake"
+    },
+    {
+      "weather_id": "raindance",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "RainDance",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/raindance"
+    },
+    {
+      "weather_id": "rainbow",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "Rainbow",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/rainbow"
+    },
+    {
+      "weather_id": "airhead",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "AirHead",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/airhead"
+    },
+    {
+      "weather_id": "beenado",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "BeeNado",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/beenado"
+    },
+    {
+      "weather_id": "sunset",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 75,
+      "start_duration_unix": 0,
+      "weather_name": "Sunset",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/sunset"
+    },
+    {
+      "weather_id": "giantswordpull",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 45,
+      "start_duration_unix": 0,
+      "weather_name": "GiantSwordPull",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/giantswordpull"
+    },
+    {
+      "weather_id": "iceking",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "IceKing",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/iceking"
+    },
+    {
+      "weather_id": "jandelufo",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "JandelUFO",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/jandelufo"
+    },
+    {
+      "weather_id": "tsunami",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "Tsunami",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/tsunami"
+    },
+    {
+      "weather_id": "midasrain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "MidasRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/midasrain"
+    },
+    {
+      "weather_id": "solarflare",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 15,
+      "start_duration_unix": 0,
+      "weather_name": "SolarFlare",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/solarflare"
+    },
+    {
+      "weather_id": "drought",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 210,
+      "start_duration_unix": 0,
+      "weather_name": "Drought",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/drought"
+    },
+    {
+      "weather_id": "soccerevent",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "SoccerEvent",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/soccerevent"
+    },
+    {
+      "weather_id": "supernova",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "Supernova",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/supernova"
+    },
+    {
+      "weather_id": "beestorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "BeeStorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/beestorm"
+    },
+    {
+      "weather_id": "shecklerain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "SheckleRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/shecklerain"
+    },
+    {
+      "weather_id": "seedrain",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 120,
+      "start_duration_unix": 0,
+      "weather_name": "SeedRain",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/seedrain"
+    },
+    {
+      "weather_id": "strobeparty",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 78,
+      "start_duration_unix": 0,
+      "weather_name": "StrobeParty",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/strobeparty"
+    },
+    {
+      "weather_id": "halloweennight",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 900,
+      "start_duration_unix": 0,
+      "weather_name": "HalloweenNight",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/halloweennight"
+    },
+    {
+      "weather_id": "superstorm",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 180,
+      "start_duration_unix": 0,
+      "weather_name": "SuperStorm",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/superstorm"
+    },
+    {
+      "weather_id": "fullmoon",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 300,
+      "start_duration_unix": 0,
+      "weather_name": "FullMoon",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/fullmoon"
+    },
+    {
+      "weather_id": "batattack",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 300,
+      "start_duration_unix": 0,
+      "weather_name": "BatAttack",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/batattack"
+    },
+    {
+      "weather_id": "reaperscythe",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 70.5,
+      "start_duration_unix": 0,
+      "weather_name": "ReaperScythe",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/reaperscythe"
+    },
+    {
+      "weather_id": "offering",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 90,
+      "start_duration_unix": 0,
+      "weather_name": "Offering",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/offering"
+    },
+    {
+      "weather_id": "marrowmoon",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 150,
+      "start_duration_unix": 0,
+      "weather_name": "MarrowMoon",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/marrowmoon"
+    },
+    {
+      "weather_id": "enchantment",
+      "end_duration_unix": 0,
+      "active": false,
+      "duration": 60,
+      "start_duration_unix": 0,
+      "weather_name": "Enchantment",
+      "icon": "https://api.joshlei.com/v2/growagarden/image/enchantment"
+    }
+  ],
+  "notification": [
+    {
+      "message": "You've completed quest: Play for 10:00",
+      "timestamp": 1760818244
+    }
+  ],
+  "travelingmerchant_stock": {
+    "merchantName": "Sky Merchant",
+    "stock": [
+      {
+        "item_id": "mutation_spray_cloudtouched",
+        "display_name": "Mutation Spray Cloudtouched",
+        "quantity": 2,
+        "start_date_unix": 1760862517,
+        "end_date_unix": 1760876917,
+        "Date_Start": "2025-10-19T08:28:37.000Z",
+        "Date_End": "2025-10-19T12:28:37.000Z",
+        "icon": "https://api.joshlei.com/v2/growagarden/image/mutation_spray_cloudtouched"
+      },
+      {
+        "item_id": "star_caller",
+        "display_name": "Star Caller",
+        "quantity": 1,
+        "start_date_unix": 1760862517,
+        "end_date_unix": 1760876917,
+        "Date_Start": "2025-10-19T08:28:37.000Z",
+        "Date_End": "2025-10-19T12:28:37.000Z",
+        "icon": "https://api.joshlei.com/v2/growagarden/image/star_caller"
+      },
+      {
+        "item_id": "night_staff",
+        "display_name": "Night Staff",
+        "quantity": 1,
+        "start_date_unix": 1760862517,
+        "end_date_unix": 1760876917,
+        "Date_Start": "2025-10-19T08:28:37.000Z",
+        "Date_End": "2025-10-19T12:28:37.000Z",
+        "icon": "https://api.joshlei.com/v2/growagarden/image/night_staff"
+      }
+    ]
+  }
+}
+[2025-10-19T09:53:00.944Z] 
+📥 Message 2:
+[2025-10-19T09:53:00.945Z] 📊 Raw message keys: weather
+[2025-10-19T09:53:00.945Z] 📦 WEATHER data detected: object Array with 1 items
+[2025-10-19T09:53:08.366Z] 🏓 Pong received
+[2025-10-19T09:53:33.378Z] 🏓 Pong received
+[2025-10-19T09:53:42.873Z] ⏰ Timeout reached. Closing connection...
+[2025-10-19T09:53:42.999Z] 🔌 WebSocket closed. Code: 1005, Reason: 
+[2025-10-19T09:53:43.000Z] 📁 Full output saved to: websocket-test-output.txt
