@@ -1,12 +1,33 @@
 import { WebSocket } from 'ws';
-import { stockManager, StockItem, WeatherInfo } from './stock-manager.js';
+import { stockManager, StockItem, WeatherInfo, TravellingMerchantItem } from './stock-manager.js';
 
 interface GrowAGardenProMessage {
   type?: string;
   data?: {
     weather?: {
-      current?: string;
-      endsAt?: string;
+      type?: string;
+      active?: boolean;
+      effects?: string[];
+      lastUpdated?: string;
+      [key: string]: unknown;
+    };
+    weatherHistory?: Array<{
+      type?: string;
+      active?: boolean;
+      startTime?: string;
+      endTime?: string;
+      [key: string]: unknown;
+    }>;
+    travelingMerchant?: {
+      merchantName?: string;
+      items?: Array<{
+        name: string;
+        quantity: number;
+        available?: boolean;
+        [key: string]: unknown;
+      }>;
+      arrivedAt?: string;
+      leavesAt?: string;
       [key: string]: unknown;
     };
     gear?: Array<{
@@ -25,6 +46,11 @@ interface GrowAGardenProMessage {
       [key: string]: unknown;
     }>;
     honey?: Array<{
+      name: string;
+      quantity: number;
+      [key: string]: unknown;
+    }>;
+    events?: Array<{
       name: string;
       quantity: number;
       [key: string]: unknown;
@@ -138,19 +164,40 @@ class GrowAGardenProWebSocketListener {
       console.log('🔄 Processing GrowAGardenPro WebSocket stock update...');
       
       // Process weather
-      if (data.weather) {
+      if (data.weather && data.weather.active && data.weather.type) {
         const weather = data.weather;
-        if (weather.current) {
-          console.log(`🌤️ Processing GrowAGardenPro weather: ${weather.current}`);
+        console.log(`🌤️ Processing GrowAGardenPro weather: ${weather.type}`);
+        
+        // Try to find end time from weatherHistory
+        let endsAt: string;
+        if (data.weatherHistory && Array.isArray(data.weatherHistory)) {
+          // Find the current weather in history to get its end time
+          const currentWeatherHistory = data.weatherHistory.find(
+            (h: { type?: string; active?: boolean; endTime?: string }) => 
+              h.type === weather.type && h.active === true && h.endTime
+          );
           
-          const weatherInfo: WeatherInfo = {
-            current: weather.current,
-            endsAt: weather.endsAt || new Date(Date.now() + 3600000).toISOString() // Default 1 hour if not provided
-          };
-          
-          // Send weather update (weather-only, preserve existing items)
-          await stockManager.updateStockData('gagpro', 'seeds', [], weatherInfo);
+          if (currentWeatherHistory && currentWeatherHistory.endTime) {
+            endsAt = currentWeatherHistory.endTime;
+          } else {
+            // Estimate: weather typically lasts 15-20 minutes, use lastUpdated + 15 minutes
+            const lastUpdated = weather.lastUpdated ? new Date(weather.lastUpdated) : new Date();
+            endsAt = new Date(lastUpdated.getTime() + 15 * 60 * 1000).toISOString();
+          }
+        } else {
+          // Estimate: weather typically lasts 15-20 minutes
+          const lastUpdated = weather.lastUpdated ? new Date(weather.lastUpdated) : new Date();
+          endsAt = new Date(lastUpdated.getTime() + 15 * 60 * 1000).toISOString();
         }
+        
+        const weatherInfo: WeatherInfo = {
+          current: weather.type, // Use 'type' field as the weather name
+          endsAt: endsAt
+        };
+        
+        // Send weather update (weather-only, preserve existing items)
+        await stockManager.updateStockData('gagpro', 'seeds', [], weatherInfo);
+        console.log(`🌤️ Weather update sent: ${weather.type} ends at ${endsAt}`);
       }
       
       // Process seeds
@@ -205,15 +252,39 @@ class GrowAGardenProWebSocketListener {
         stockManager.updateStockData('gagpro', 'cosmetics', cosmetics);
       }
       
-      // Process events (honey in the Python code)
-      if (data.honey && Array.isArray(data.honey)) {
-        const events: StockItem[] = data.honey.map((item, index) => ({
+      // Process events (separate from honey/traveling merchant)
+      if (data.events && Array.isArray(data.events)) {
+        const events: StockItem[] = data.events.map((item, index) => ({
           id: item.name || `event-${index}`,
           name: item.name,
           quantity: item.quantity || 0
         }));
         console.log(`🎉 Processing ${events.length} event items from GrowAGardenPro`);
         stockManager.updateStockData('gagpro', 'events', events);
+      }
+      
+      // Process traveling merchant (honey items are merchant items)
+      if (data.travelingMerchant && data.travelingMerchant.items && Array.isArray(data.travelingMerchant.items)) {
+        const merchantItems = data.travelingMerchant.items.filter((item: { available?: boolean }) => item.available !== false);
+        const travellingMerchant: TravellingMerchantItem[] = merchantItems.map((item, index) => ({
+          id: item.name || `merchant-${index}`,
+          name: item.name,
+          quantity: item.quantity || 0
+        }));
+        
+        const merchantName = data.travelingMerchant.merchantName || 'Traveling Merchant';
+        console.log(`🛒 Processing ${travellingMerchant.length} traveling merchant items from GrowAGardenPro: ${merchantName}`);
+        stockManager.updateStockData('gagpro', 'seeds', [], undefined, travellingMerchant, merchantName);
+      } else if (data.honey && Array.isArray(data.honey)) {
+        // Fallback: if travelingMerchant structure not available, use honey as merchant items
+        const merchantItems = data.honey.filter((item: { available?: boolean }) => item.available !== false);
+        const travellingMerchant: TravellingMerchantItem[] = merchantItems.map((item, index) => ({
+          id: item.name || `merchant-${index}`,
+          name: item.name,
+          quantity: item.quantity || 0
+        }));
+        console.log(`🛒 Processing ${travellingMerchant.length} traveling merchant items from GrowAGardenPro (from honey field)`);
+        stockManager.updateStockData('gagpro', 'seeds', [], undefined, travellingMerchant, 'Traveling Merchant');
       }
       
       console.log('✅ GrowAGardenPro WebSocket stock update processed successfully');
