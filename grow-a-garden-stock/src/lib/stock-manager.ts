@@ -472,6 +472,9 @@ class StockManager {
     }
 
     console.log(`📥 Received ${source} update for ${category}:`, items.length, 'items');
+    if (items.length > 0 && items.length <= 10) {
+      console.log(`📥 Sample items:`, items.map(i => `${i.name}(${i.id})`).join(', '));
+    }
     
     // Validate that critical categories are not empty (but allow weather-only updates and travelling merchant updates)
     if ((category === 'seeds' || category === 'gear' || category === 'eggs') && items.length === 0 && !weather && !travellingMerchant) {

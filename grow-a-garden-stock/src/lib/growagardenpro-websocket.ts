@@ -110,11 +110,13 @@ class GrowAGardenProWebSocketListener {
           if (message.type && message.data) {
             console.log('📥 Received GrowAGardenPro WebSocket stock update');
             console.log('📋 Message type:', message.type);
+            console.log('📋 Data keys:', Object.keys(message.data || {}));
             await this.processStockUpdate(message.data);
           } else {
             // Try to process as direct data (in case structure is different)
             if (message.data) {
               console.log('📥 Received GrowAGardenPro WebSocket data (no type field)');
+              console.log('📋 Data keys:', Object.keys(message.data || {}));
               await this.processStockUpdate(message.data);
             } else {
               // Try to process the message itself as data (fallback)
@@ -207,13 +209,21 @@ class GrowAGardenProWebSocketListener {
       
       // Process seeds
       if (data.seeds && Array.isArray(data.seeds)) {
-        const seeds: StockItem[] = data.seeds.map((item, index) => ({
-          id: item.name || `seed-${index}`, // Use name as ID if no ID provided
-          name: item.name,
-          quantity: item.quantity || 0
-        }));
+        const seeds: StockItem[] = data.seeds.map((item, index) => {
+          // Normalize item name to lowercase for consistent ID generation
+          // This ensures IDs match across sources (e.g., "Tomato" vs "tomato")
+          const normalizedName = item.name?.toLowerCase().replace(/\s+/g, '_') || `seed_${index}`;
+          return {
+            id: normalizedName,
+            name: item.name,
+            quantity: item.quantity || 0
+          };
+        });
         console.log(`🌱 Processing ${seeds.length} seeds from GrowAGardenPro`);
+        console.log(`🌱 Sample seeds:`, seeds.slice(0, 5).map(s => `${s.name} (${s.quantity})`).join(', '));
         stockManager.updateStockData('gagpro', 'seeds', seeds);
+      } else {
+        console.log(`⚠️ No seeds data from GrowAGardenPro or seeds is not an array`);
       }
       
       // Process gear
