@@ -168,7 +168,10 @@ class GrowAGardenProWebSocketListener {
         const weather = data.weather;
         const weatherType = weather.type as string; // Type assertion: we know it exists from the if condition
         
-        console.log(`🌤️ Processing GrowAGardenPro weather: ${weatherType}`);
+        // Capitalize first letter of weather type (e.g., "rain" -> "Rain")
+        const capitalizedWeatherType = weatherType.charAt(0).toUpperCase() + weatherType.slice(1).toLowerCase();
+        
+        console.log(`🌤️ Processing GrowAGardenPro weather: ${capitalizedWeatherType}`);
         
         // Try to find end time from weatherHistory
         let endsAt: string;
@@ -193,13 +196,13 @@ class GrowAGardenProWebSocketListener {
         }
         
         const weatherInfo: WeatherInfo = {
-          current: weatherType, // Use 'type' field as the weather name
+          current: capitalizedWeatherType, // Capitalized weather name (e.g., "Rain", "Snow", "Sandstorm")
           endsAt: endsAt
         };
         
         // Send weather update (weather-only, preserve existing items)
         await stockManager.updateStockData('gagpro', 'seeds', [], weatherInfo);
-        console.log(`🌤️ Weather update sent: ${weatherType} ends at ${endsAt}`);
+        console.log(`🌤️ Weather update sent: ${capitalizedWeatherType} ends at ${endsAt}`);
       }
       
       // Process seeds
