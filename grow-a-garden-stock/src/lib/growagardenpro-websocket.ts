@@ -267,7 +267,10 @@ class GrowAGardenProWebSocketListener {
       
       // Process traveling merchant (honey items are merchant items)
       if (data.travelingMerchant && data.travelingMerchant.items && Array.isArray(data.travelingMerchant.items)) {
-        const merchantItems = data.travelingMerchant.items.filter((item: { available?: boolean }) => item.available !== false);
+        const merchantItems = data.travelingMerchant.items.filter((item) => {
+          const available = (item as { available?: boolean }).available;
+          return available !== false;
+        });
         const travellingMerchant: TravellingMerchantItem[] = merchantItems.map((item, index) => ({
           id: item.name || `merchant-${index}`,
           name: item.name,
@@ -279,7 +282,10 @@ class GrowAGardenProWebSocketListener {
         stockManager.updateStockData('gagpro', 'seeds', [], undefined, travellingMerchant, merchantName);
       } else if (data.honey && Array.isArray(data.honey)) {
         // Fallback: if travelingMerchant structure not available, use honey as merchant items
-        const merchantItems = data.honey.filter((item: { available?: boolean }) => item.available !== false);
+        const merchantItems = data.honey.filter((item) => {
+          const available = (item as { available?: boolean }).available;
+          return available !== false;
+        });
         const travellingMerchant: TravellingMerchantItem[] = merchantItems.map((item, index) => ({
           id: item.name || `merchant-${index}`,
           name: item.name,
