@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { jstudioWebSocket } from './jstudio-websocket.js';
+import { growAGardenProWebSocket } from './growagardenpro-websocket.js';
 import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener.js';
 import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
 import { sendItemNotification, sendWeatherAlertNotification, sendCategoryNotification } from './notification-manager.js';
@@ -62,7 +63,7 @@ export interface AllStockData {
 
 // Source tracking with better timing
 export interface SourceInfo {
-  name: 'websocket' | 'cactus' | 'vulcan';
+  name: 'gagpro' | 'websocket' | 'cactus' | 'vulcan';
   lastUpdate: string;
   isOnline: boolean;
   lastDataHash: string;
@@ -111,9 +112,10 @@ class StockManager {
   // Note: For weather updates, Discord sources (Cactus primary, Vulcan backup) are preferred
   // WebSocket weather updates are ignored due to unreliable data structure
   private readonly SOURCE_PRIORITY = {
-    websocket: { priority: 1, maxDelayMinutes: 2, minUpdateIntervalMinutes: 1 },
-    cactus: { priority: 2, maxDelayMinutes: 2, minUpdateIntervalMinutes: 2 },
-    vulcan: { priority: 3, maxDelayMinutes: 2, minUpdateIntervalMinutes: 5 }
+    gagpro: { priority: 0, maxDelayMinutes: 2, minUpdateIntervalMinutes: 1 }, // Primary: GrowAGardenPro WebSocket
+    websocket: { priority: 1, maxDelayMinutes: 2, minUpdateIntervalMinutes: 1 }, // Backup 1: JStudio WebSocket
+    cactus: { priority: 2, maxDelayMinutes: 2, minUpdateIntervalMinutes: 2 }, // Backup 2: Cactus Discord
+    vulcan: { priority: 3, maxDelayMinutes: 2, minUpdateIntervalMinutes: 5 } // Backup 3: Vulcan Discord
   };
 
   constructor() {
@@ -208,6 +210,15 @@ class StockManager {
   }
 
   private initializeSources() {
+    this.sources.set('gagpro', {
+      name: 'gagpro',
+      lastUpdate: new Date(0).toISOString(),
+      isOnline: false,
+      lastDataHash: '',
+      lastSuccessfulUpdate: new Date(0).toISOString(),
+      lastMessageReceived: new Date(0).toISOString()
+    });
+    
     this.sources.set('websocket', {
       name: 'websocket',
       lastUpdate: new Date(0).toISOString(),
@@ -355,8 +366,12 @@ class StockManager {
   public async start() {
     console.log('🚀 Starting Stock Manager with multi-source coordination...');
     
-    // Start WebSocket listener
-    console.log('📡 Starting JStudio WebSocket listener...');
+    // Start primary WebSocket listener (GrowAGardenPro)
+    console.log('📡 Starting GrowAGardenPro WebSocket listener (Primary)...');
+    growAGardenProWebSocket.start();
+    
+    // Start backup WebSocket listener (JStudio)
+    console.log('📡 Starting JStudio WebSocket listener (Backup)...');
     jstudioWebSocket.start();
     
     // Start Discord listeners
@@ -377,9 +392,10 @@ class StockManager {
     console.log('📊 Multi-source coordination is now active');
     console.log('🌐 API endpoint: http://103.45.246.244:3000/api/stock');
     console.log('💡 The Stock Manager will automatically:');
-    console.log('   • Prioritize JStudio WebSocket as primary source (99% uptime)');
-    console.log('   • Use Cactus Discord as backup 1 (faster updates)');
-    console.log('   • Use Vulcan Discord as backup 2 (last resort)');
+    console.log('   • Prioritize GrowAGardenPro WebSocket as primary source');
+    console.log('   • Use JStudio WebSocket as backup 1');
+    console.log('   • Use Cactus Discord as backup 2');
+    console.log('   • Use Vulcan Discord as backup 3');
     console.log('   • Validate data consistency between sources');
     console.log('   • Prevent duplicate notifications');
     console.log('   • Handle travelling merchant updates');
@@ -392,7 +408,7 @@ class StockManager {
   }
 
   public async updateStockData(
-    source: 'websocket' | 'cactus' | 'vulcan',
+    source: 'gagpro' | 'websocket' | 'cactus' | 'vulcan',
     category: keyof Pick<AllStockData, 'seeds' | 'gear' | 'eggs' | 'cosmetics' | 'events'>,
     items: StockItem[],
     weather?: WeatherInfo,
@@ -1015,11 +1031,12 @@ class StockManager {
 
   public stop() {
     console.log('🛑 Stopping Stock Manager...');
+    growAGardenProWebSocket.stop();
     jstudioWebSocket.stop();
     // Note: Discord listeners don't have explicit stop methods, they'll be cleaned up by process exit
   }
 
-  public updateSourceActivity(source: 'websocket' | 'cactus' | 'vulcan') {
+  public updateSourceActivity(source: 'gagpro' | 'websocket' | 'cactus' | 'vulcan') {
     const sourceInfo = this.sources.get(source);
     if (sourceInfo) {
       sourceInfo.lastMessageReceived = new Date().toISOString();

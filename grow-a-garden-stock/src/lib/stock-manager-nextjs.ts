@@ -4,7 +4,7 @@
 
 export interface StockUpdateEvent {
   type: 'stock_update';
-  source: 'websocket' | 'cactus' | 'vulcan';
+  source: 'gagpro' | 'websocket' | 'cactus' | 'vulcan';
   category: string;
   stockId: string;
   data: AllStockData;
