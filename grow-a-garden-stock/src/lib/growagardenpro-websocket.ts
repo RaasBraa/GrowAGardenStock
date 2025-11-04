@@ -166,7 +166,9 @@ class GrowAGardenProWebSocketListener {
       // Process weather
       if (data.weather && data.weather.active && data.weather.type) {
         const weather = data.weather;
-        console.log(`🌤️ Processing GrowAGardenPro weather: ${weather.type}`);
+        const weatherType = weather.type as string; // Type assertion: we know it exists from the if condition
+        
+        console.log(`🌤️ Processing GrowAGardenPro weather: ${weatherType}`);
         
         // Try to find end time from weatherHistory
         let endsAt: string;
@@ -174,7 +176,7 @@ class GrowAGardenProWebSocketListener {
           // Find the current weather in history to get its end time
           const currentWeatherHistory = data.weatherHistory.find(
             (h: { type?: string; active?: boolean; endTime?: string }) => 
-              h.type === weather.type && h.active === true && h.endTime
+              h.type === weatherType && h.active === true && h.endTime
           );
           
           if (currentWeatherHistory && currentWeatherHistory.endTime) {
@@ -191,13 +193,13 @@ class GrowAGardenProWebSocketListener {
         }
         
         const weatherInfo: WeatherInfo = {
-          current: weather.type, // Use 'type' field as the weather name
+          current: weatherType, // Use 'type' field as the weather name
           endsAt: endsAt
         };
         
         // Send weather update (weather-only, preserve existing items)
         await stockManager.updateStockData('gagpro', 'seeds', [], weatherInfo);
-        console.log(`🌤️ Weather update sent: ${weather.type} ends at ${endsAt}`);
+        console.log(`🌤️ Weather update sent: ${weatherType} ends at ${endsAt}`);
       }
       
       // Process seeds
