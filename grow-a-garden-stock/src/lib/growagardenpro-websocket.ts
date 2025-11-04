@@ -1,6 +1,12 @@
 import { WebSocket } from 'ws';
 import { stockManager, StockItem, WeatherInfo, TravellingMerchantItem } from './stock-manager.js';
 
+// Utility to normalize item names to IDs (same as Discord parser)
+// This ensures IDs match across all sources
+function normalizeId(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
 interface GrowAGardenProMessage {
   type?: string;
   data?: {
@@ -210,17 +216,17 @@ class GrowAGardenProWebSocketListener {
       // Process seeds
       if (data.seeds && Array.isArray(data.seeds)) {
         const seeds: StockItem[] = data.seeds.map((item, index) => {
-          // Normalize item name to lowercase for consistent ID generation
-          // This ensures IDs match across sources (e.g., "Tomato" vs "tomato")
-          const normalizedName = item.name?.toLowerCase().replace(/\s+/g, '_') || `seed_${index}`;
+          // Use the same normalization function as Discord sources
+          // This ensures IDs match across all sources (e.g., "Green Apple" -> "green_apple")
+          const normalizedId = item.name ? normalizeId(item.name) : `seed_${index}`;
           return {
-            id: normalizedName,
+            id: normalizedId,
             name: item.name,
             quantity: item.quantity || 0
           };
         });
         console.log(`🌱 Processing ${seeds.length} seeds from GrowAGardenPro`);
-        console.log(`🌱 Sample seeds:`, seeds.slice(0, 5).map(s => `${s.name} (${s.quantity})`).join(', '));
+        console.log(`🌱 Sample seeds:`, seeds.slice(0, 5).map(s => `${s.name}(${s.id}) [${s.quantity}]`).join(', '));
         stockManager.updateStockData('gagpro', 'seeds', seeds);
       } else {
         console.log(`⚠️ No seeds data from GrowAGardenPro or seeds is not an array`);
@@ -229,7 +235,7 @@ class GrowAGardenProWebSocketListener {
       // Process gear
       if (data.gear && Array.isArray(data.gear)) {
         const gear: StockItem[] = data.gear.map((item, index) => ({
-          id: item.name || `gear-${index}`,
+          id: item.name ? normalizeId(item.name) : `gear_${index}`,
           name: item.name,
           quantity: item.quantity || 0
         }));
@@ -248,7 +254,7 @@ class GrowAGardenProWebSocketListener {
         });
         
         const eggs: StockItem[] = Array.from(eggMap.entries()).map(([name, quantity], index) => ({
-          id: name || `egg-${index}`,
+          id: name ? normalizeId(name) : `egg_${index}`,
           name: name,
           quantity: quantity
         }));
@@ -259,7 +265,7 @@ class GrowAGardenProWebSocketListener {
       // Process cosmetics
       if (data.cosmetics && Array.isArray(data.cosmetics)) {
         const cosmetics: StockItem[] = data.cosmetics.map((item, index) => ({
-          id: item.name || `cosmetic-${index}`,
+          id: item.name ? normalizeId(item.name) : `cosmetic_${index}`,
           name: item.name,
           quantity: item.quantity || 0
         }));
@@ -270,7 +276,7 @@ class GrowAGardenProWebSocketListener {
       // Process events (separate from honey/traveling merchant)
       if (data.events && Array.isArray(data.events)) {
         const events: StockItem[] = data.events.map((item, index) => ({
-          id: item.name || `event-${index}`,
+          id: item.name ? normalizeId(item.name) : `event_${index}`,
           name: item.name,
           quantity: item.quantity || 0
         }));

@@ -693,8 +693,18 @@ class StockManager {
     
     console.log(`🔍 Time since last update: ${timeSinceLastUpdate}ms, min interval: ${minUpdateInterval}ms`);
     
+    // Check if the last update had items or was weather-only
+    // If last update had no items (weather-only), allow item updates immediately
+    const hasItems = (currentCategory as StockCategory).items && (currentCategory as StockCategory).items.length > 0;
+    
     // Check if enough time has passed since last update
+    // BUT: If last update had no items (was weather-only), allow item updates immediately
     if (timeSinceLastUpdate < minUpdateInterval) {
+      if (!hasItems) {
+        // Last update was weather-only (no items), allow item updates immediately
+        console.log(`🔍 Last update was weather-only (no items) - allowing item update immediately`);
+        return true;
+      }
       console.log(`🔍 Rejecting ${source} update for ${category} - too soon since last update`);
       return false;
     }
