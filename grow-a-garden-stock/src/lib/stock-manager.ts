@@ -87,7 +87,9 @@ class StockManager {
   private lastDailySeedReset: string = ''; // Track when daily seeds last changed
   
   // Rate limiting to prevent server overload
+  // Separate timers for item updates vs weather/merchant updates
   private lastUpdateTime: { [key: string]: number } = {};
+  private lastItemUpdateTime: { [key: string]: number } = {}; // Separate timer for item updates only
   private readonly MIN_UPDATE_INTERVAL = 2000; // 2 seconds between updates for same category
   
   // Background notification queue to prevent blocking
@@ -418,13 +420,32 @@ class StockManager {
     const now = Date.now();
     const updateKey = `${source}-${category}`;
     
-    // Rate limiting: prevent too frequent updates
-    if (this.lastUpdateTime[updateKey] && (now - this.lastUpdateTime[updateKey]) < this.MIN_UPDATE_INTERVAL) {
-      console.log(`⏭️ Rate limited: ${source} update for ${category} - too soon since last update`);
-      return;
-    }
+    // Check if this is a weather-only update (empty items array with weather data)
+    const isWeatherUpdate = items.length === 0 && weather !== undefined && !travellingMerchant;
+    // Check if this is a travelling merchant update (empty items array with travelling merchant data)
+    const isTravellingMerchantUpdate = items.length === 0 && travellingMerchant !== undefined;
     
-    this.lastUpdateTime[updateKey] = now;
+    // Rate limiting: prevent too frequent updates
+    // Use separate timers for item updates vs weather/merchant-only updates
+    // This allows weather updates to not block subsequent item updates
+    if (isWeatherUpdate || isTravellingMerchantUpdate) {
+      // Weather/merchant-only updates: use general timer, but don't block item updates
+      if (this.lastUpdateTime[updateKey] && (now - this.lastUpdateTime[updateKey]) < this.MIN_UPDATE_INTERVAL) {
+        console.log(`⏭️ Rate limited: ${source} ${isWeatherUpdate ? 'weather' : 'merchant'}-only update for ${category} - too soon since last update`);
+        return;
+      }
+      this.lastUpdateTime[updateKey] = now;
+    } else {
+      // Item updates: use separate timer that doesn't interfere with weather updates
+      const itemUpdateKey = `${source}-${category}-items`;
+      if (this.lastItemUpdateTime[itemUpdateKey] && (now - this.lastItemUpdateTime[itemUpdateKey]) < this.MIN_UPDATE_INTERVAL) {
+        console.log(`⏭️ Rate limited: ${source} update for ${category} - too soon since last item update`);
+        return;
+      }
+      this.lastItemUpdateTime[itemUpdateKey] = now;
+      // Also update general timer for backward compatibility
+      this.lastUpdateTime[updateKey] = now;
+    }
     
     const nowISO = new Date().toISOString();
     const sourceInfo = this.sources.get(source);
@@ -437,12 +458,6 @@ class StockManager {
     // Always update last message received timestamp
     sourceInfo.lastMessageReceived = nowISO;
     sourceInfo.isOnline = true;
-
-    // Check if this is a weather-only update (empty items array with weather data)
-    const isWeatherUpdate = items.length === 0 && weather !== undefined;
-    
-    // Check if this is a travelling merchant update (empty items array with travelling merchant data)
-    const isTravellingMerchantUpdate = items.length === 0 && travellingMerchant !== undefined;
     
     if (isWeatherUpdate) {
       console.log(`🌤️ Processing weather-only update from ${source}`);
