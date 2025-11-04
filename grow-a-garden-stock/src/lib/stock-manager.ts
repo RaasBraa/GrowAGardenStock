@@ -526,10 +526,19 @@ class StockManager {
       }
       
       // Add this weather event to the active weather list
-      const existingIndex = this.stockData.weather.activeWeather.findIndex(w => w.current === weather.current);
+      // Use case-insensitive comparison to prevent duplicates (e.g., "Rain" vs "rain")
+      const normalizedWeatherName = weather.current.toLowerCase();
+      const existingIndex = this.stockData.weather.activeWeather.findIndex(w => w.current.toLowerCase() === normalizedWeatherName);
       if (existingIndex >= 0) {
-        // Update existing weather event
-        this.stockData.weather.activeWeather[existingIndex] = weather;
+        // Update existing weather event - preserve capitalized name if it exists, update endsAt
+        const existingWeather = this.stockData.weather.activeWeather[existingIndex];
+        existingWeather.endsAt = weather.endsAt;
+        // Use capitalized version if the new one is capitalized (first letter uppercase, rest lowercase)
+        const isProperlyCapitalized = weather.current.charAt(0) === weather.current.charAt(0).toUpperCase() && 
+                                      weather.current.slice(1).toLowerCase() === weather.current.slice(1);
+        if (isProperlyCapitalized) {
+          existingWeather.current = weather.current;
+        }
       } else {
         // Add new weather event
         this.stockData.weather.activeWeather.push(weather);
