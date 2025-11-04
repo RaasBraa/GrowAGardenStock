@@ -50,18 +50,18 @@ export const ALL_ITEMS = {
     "Watermelon", "Pumpkin", "Apple", "Bamboo", "Broccoli", "Coconut", "Cactus", 
     "Dragon Fruit", "Mango", "Potato", "Grape", "Mushroom", "Pepper", "Cacao", 
     "Brussels Sprout", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", 
-    "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango", "Crimson Thorn", "Great Pumpkin"
+    "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango", "Crimson Thorn", "Great Pumpkin",
+    "Buttercup", "Trinity Fruit"
   ],
   gear: [
     "Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler",
     "Godly Sprinkler", "Tanning Mirror", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray",
     "Favorite Tool", "Harvest Tool", "Friendship Pot", "Medium Toy", "Medium Treat", "Levelup Lollipop",
-    "Cleansing Pet Shard"
+    "Cleansing Pet Shard", "Pet Name Reroller", "Pet Lead", "Rainbow Lollipop"
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
-    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg", "Jungle Egg",
-    "Pet Name Reroller", "Pet Lead", "Rainbow Lollipop"
+    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg", "Jungle Egg"
   ],
   events: [
     "Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", 
