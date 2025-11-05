@@ -373,9 +373,9 @@ class StockManager {
     console.log('📡 Starting GrowAGardenPro WebSocket listener (Primary)...');
     growAGardenProWebSocket.start();
     
-    // Start backup WebSocket listener (JStudio)
-    console.log('📡 Starting JStudio WebSocket listener (Backup)...');
-    jstudioWebSocket.start();
+    // TEMPORARILY DISABLED: Start backup WebSocket listener (JStudio)
+    // console.log('📡 Starting JStudio WebSocket listener (Backup)...');
+    // jstudioWebSocket.start();
     
     // Start Discord listeners
     console.log('🌵 Starting Cactus Discord listener...');
@@ -396,9 +396,9 @@ class StockManager {
     console.log('🌐 API endpoint: http://103.45.246.244:3000/api/stock');
     console.log('💡 The Stock Manager will automatically:');
     console.log('   • Prioritize GrowAGardenPro WebSocket as primary source');
-    console.log('   • Use JStudio WebSocket as backup 1');
-    console.log('   • Use Cactus Discord as backup 2');
-    console.log('   • Use Vulcan Discord as backup 3');
+    // console.log('   • Use JStudio WebSocket as backup 1'); // TEMPORARILY DISABLED
+    console.log('   • Use Cactus Discord as backup 1');
+    console.log('   • Use Vulcan Discord as backup 2');
     console.log('   • Validate data consistency between sources');
     console.log('   • Prevent duplicate notifications');
     console.log('   • Handle travelling merchant updates');
@@ -707,9 +707,12 @@ class StockManager {
         const lastItemUpdateTime = new Date(lastItemUpdate).getTime();
         const timeSinceLastItemUpdate = now - lastItemUpdateTime;
         
-        // Use the item update timestamp instead of the general timestamp
-        if (timeSinceLastItemUpdate < minUpdateInterval) {
-          console.log(`🔍 Rejecting ${source} update for ${category} - too soon since last item update (${timeSinceLastItemUpdate}ms)`);
+        // Use a shorter interval for item updates (5 seconds instead of 60 seconds)
+        // This prevents spam while still allowing legitimate updates from the same source
+        const itemUpdateInterval = 5000; // 5 seconds - much shorter than the category-level interval
+        
+        if (timeSinceLastItemUpdate < itemUpdateInterval) {
+          console.log(`🔍 Rejecting ${source} update for ${category} - too soon since last item update (${timeSinceLastItemUpdate}ms, min: ${itemUpdateInterval}ms)`);
           return false;
         }
         // If enough time has passed since last item update, allow this update
@@ -918,16 +921,17 @@ class StockManager {
             const shouldNotify = this.shouldNotifyForItem();
             console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
             
+            // DUPLICATE FILTERING DISABLED - Commented out for easy reactivation if needed
             // Only apply duplicate filtering to seeds (where daily seeds cause spam)
-            if (category === 'seeds') {
-              console.log(`🔍 Checking duplicate filter for ${item.name} (${item.id}, quantity: ${item.quantity})`);
-              const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
-              console.log(`🔍 Duplicate filter result for ${item.name}: ${shouldFilterDuplicate}`);
-              if (shouldFilterDuplicate) {
-                console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
-                continue;
-              }
-            }
+            // if (category === 'seeds') {
+            //   console.log(`🔍 Checking duplicate filter for ${item.name} (${item.id}, quantity: ${item.quantity})`);
+            //   const shouldFilterDuplicate = this.shouldFilterDuplicateItem(item.id, item.quantity);
+            //   console.log(`🔍 Duplicate filter result for ${item.name}: ${shouldFilterDuplicate}`);
+            //   if (shouldFilterDuplicate) {
+            //     console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
+            //     continue;
+            //   }
+            // }
             
             if (shouldNotify) {
               await sendItemNotification(item.name, item.quantity, category);
@@ -1088,7 +1092,7 @@ class StockManager {
   public stop() {
     console.log('🛑 Stopping Stock Manager...');
     growAGardenProWebSocket.stop();
-    jstudioWebSocket.stop();
+    // jstudioWebSocket.stop(); // TEMPORARILY DISABLED
     // Note: Discord listeners don't have explicit stop methods, they'll be cleaned up by process exit
   }
 
