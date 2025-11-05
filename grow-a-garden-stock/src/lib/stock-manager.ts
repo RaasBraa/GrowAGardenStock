@@ -90,6 +90,7 @@ class StockManager {
   // Separate timers for item updates vs weather/merchant updates
   private lastUpdateTime: { [key: string]: number } = {};
   private lastItemUpdateTime: { [key: string]: number } = {}; // Separate timer for item updates only
+  private lastItemUpdateTimestamp: { [key: string]: string } = {}; // Track when items were last updated (by category)
   private readonly MIN_UPDATE_INTERVAL = 2000; // 2 seconds between updates for same category
   
   // Background notification queue to prevent blocking
@@ -531,6 +532,9 @@ class StockManager {
           refreshIntervalMinutes: this.REFRESH_INTERVALS[category],
           lastStockId: stockId
         };
+        
+        // Track when items were last updated (not just timestamp updates)
+        this.lastItemUpdateTimestamp[category] = nowISO;
       }
     }
     
@@ -693,18 +697,33 @@ class StockManager {
     
     console.log(`🔍 Time since last update: ${timeSinceLastUpdate}ms, min interval: ${minUpdateInterval}ms`);
     
-    // Check if the last update had items or was weather-only
-    // If last update had no items (weather-only), allow item updates immediately
-    const hasItems = (currentCategory as StockCategory).items && (currentCategory as StockCategory).items.length > 0;
-    
-    // Check if enough time has passed since last update
-    // BUT: If last update had no items (was weather-only), allow item updates immediately
-    if (timeSinceLastUpdate < minUpdateInterval) {
-      if (!hasItems) {
-        // Last update was weather-only (no items), allow item updates immediately
-        console.log(`🔍 Last update was weather-only (no items) - allowing item update immediately`);
+    // Special handling: If this is an item update (not weather/merchant-only),
+    // check if the last ITEM update was recent, not just any update.
+    // This allows item updates to come immediately after weather-only updates.
+    if (!isWeatherUpdate && !travellingMerchant) {
+      // Check if we have a record of when items were last updated
+      const lastItemUpdate = this.lastItemUpdateTimestamp[category];
+      if (lastItemUpdate) {
+        const lastItemUpdateTime = new Date(lastItemUpdate).getTime();
+        const timeSinceLastItemUpdate = now - lastItemUpdateTime;
+        
+        // Use the item update timestamp instead of the general timestamp
+        if (timeSinceLastItemUpdate < minUpdateInterval) {
+          console.log(`🔍 Rejecting ${source} update for ${category} - too soon since last item update (${timeSinceLastItemUpdate}ms)`);
+          return false;
+        }
+        // If enough time has passed since last item update, allow this update
+        console.log(`🔍 Allowing ${source} update for ${category} - ${timeSinceLastItemUpdate}ms since last item update`);
+        return true;
+      } else {
+        // No previous item updates recorded, allow this update
+        console.log(`🔍 Allowing ${source} update for ${category} - no previous item updates recorded`);
         return true;
       }
+    }
+    
+    // For weather/merchant-only updates, use the general timestamp check
+    if (timeSinceLastUpdate < minUpdateInterval) {
       console.log(`🔍 Rejecting ${source} update for ${category} - too soon since last update`);
       return false;
     }
