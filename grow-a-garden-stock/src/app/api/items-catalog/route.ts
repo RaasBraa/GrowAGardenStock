@@ -46,9 +46,10 @@ export async function GET() {
         { id: "cocomango", name: "Cocomango", rarity: "Prismatic", category: "seeds" },
         { id: "crimson_thorn", name: "Crimson Thorn", rarity: "Prismatic", category: "seeds" },
         { id: "great_pumpkin", name: "Great Pumpkin", rarity: "Prismatic", category: "seeds" },
-        { id: "trinity_fruit", name: "Trinity Fruit", rarity: "Prismatic", category: "seeds" }
+        { id: "trinity_fruit", name: "Trinity Fruit", rarity: "Prismatic", category: "seeds" },
+        { id: "zebrazinkle", name: "Zebrazinkle", rarity: "Prismatic", category: "seeds" }
       ],
-      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "brussels_sprout", "beanstalk", "ember_lily", "sugar_apple", "burning_bud", "giant_pinecone", "elder_strawberry", "romanesco", "cocomango", "crimson_thorn", "great_pumpkin", "trinity_fruit"]
+      defaultEnabled: ["grape", "mushroom", "pepper", "cacao", "brussels_sprout", "beanstalk", "ember_lily", "sugar_apple", "burning_bud", "giant_pinecone", "elder_strawberry", "romanesco", "cocomango", "crimson_thorn", "great_pumpkin", "trinity_fruit", "zebrazinkle"]
     },
     gear: {
       name: "Gear",
