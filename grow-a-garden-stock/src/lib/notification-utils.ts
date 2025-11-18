@@ -6,7 +6,7 @@ export const ALL_ITEMS = {
     "Carrot", "Strawberry", "Blueberry", "Orange Tulip", "Tomato", "Corn", "Daffodil",
     "Watermelon", "Pumpkin", "Apple", "Bamboo", "Broccoli", "Coconut", "Cactus", 
     "Dragon Fruit", "Mango", "Potato", "Grape", "Mushroom", "Pepper", "Cacao", 
-    "Brussels Sprout", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", 
+    "Brussels Sprout", "Sunflower", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", 
     "Giant Pinecone", "Elder Strawberry", "Romanesco", "Cocomango", "Crimson Thorn", "Great Pumpkin",
     "Buttercup", "Trinity Fruit", "Zebrazinkle"
   ],
