@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:low-memory": "NODE_OPTIONS='--max-old-space-size=512' next build",
+    "build:low-memory": "NODE_OPTIONS='--max-old-space-size=2048' next build",
     "start": "next start",
     "lint": "next lint",
     "start-websocket": "ts-node start-stock-manager.ts",
