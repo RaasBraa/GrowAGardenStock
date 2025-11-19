@@ -9,6 +9,26 @@ const nextConfig = {
     ignoreDuringBuilds: true, // Ignore ESLint errors during build for now
   },
   
+  // Reduce memory usage during build
+  webpack: (config, { dev }) => {
+    if (!dev) {
+      // Reduce memory usage in production builds
+      config.optimization = {
+        ...config.optimization,
+        // Reduce parallelism to save memory
+        moduleIds: 'deterministic',
+        chunkIds: 'deterministic',
+      };
+      
+      // Limit cache size
+      config.cache = {
+        ...config.cache,
+        maxMemoryGenerations: 1,
+      };
+    }
+    return config;
+  },
+  
   // Security headers
   async headers() {
     return [
