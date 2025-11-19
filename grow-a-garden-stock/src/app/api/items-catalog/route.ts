@@ -108,9 +108,11 @@ export async function GET() {
         { id: "bee_egg", name: "Bee Egg", rarity: "Mythical", category: "eggs" },
         // Divine
         { id: "bug_egg", name: "Bug Egg", rarity: "Divine", category: "eggs" },
-        { id: "jungle_egg", name: "Jungle Egg", rarity: "Divine", category: "eggs" }
+        { id: "jungle_egg", name: "Jungle Egg", rarity: "Divine", category: "eggs" },
+        // Prismatic
+        { id: "gem_egg", name: "Gem Egg", rarity: "Prismatic", category: "eggs" }
       ],
-      defaultEnabled: ["mythical_egg", "paradise_egg", "bug_egg", "jungle_egg"]
+      defaultEnabled: ["mythical_egg", "paradise_egg", "bug_egg", "jungle_egg", "gem_egg"]
     },
     cosmetics: {
       name: "Cosmetics",

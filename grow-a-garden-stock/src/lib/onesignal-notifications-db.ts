@@ -61,7 +61,7 @@ export const ALL_ITEMS = {
   ],
   eggs: [
     "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg",
-    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg", "Jungle Egg"
+    "Bug Egg", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg", "Jungle Egg", "Gem Egg"
   ],
   events: [
     "Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", 
