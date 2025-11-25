@@ -431,11 +431,11 @@ class StockManager {
     // This allows weather updates to not block subsequent item updates
     if (isWeatherUpdate || isTravellingMerchantUpdate) {
       // Weather/merchant-only updates: use general timer, but don't block item updates
-      if (this.lastUpdateTime[updateKey] && (now - this.lastUpdateTime[updateKey]) < this.MIN_UPDATE_INTERVAL) {
+    if (this.lastUpdateTime[updateKey] && (now - this.lastUpdateTime[updateKey]) < this.MIN_UPDATE_INTERVAL) {
         console.log(`⏭️ Rate limited: ${source} ${isWeatherUpdate ? 'weather' : 'merchant'}-only update for ${category} - too soon since last update`);
-        return;
-      }
-      this.lastUpdateTime[updateKey] = now;
+      return;
+    }
+    this.lastUpdateTime[updateKey] = now;
     } else {
       // Item updates: use separate timer that doesn't interfere with weather updates
       const itemUpdateKey = `${source}-${category}-items`;
