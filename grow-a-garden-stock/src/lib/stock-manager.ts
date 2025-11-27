@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { jstudioWebSocket } from './jstudio-websocket.js';
+// import { jstudioWebSocket } from './jstudio-websocket.js'; // TEMPORARILY DISABLED
 import { growAGardenProWebSocket } from './growagardenpro-websocket.js';
 import { initializeDiscordListener as initializeCactusDiscord } from './discord-listener.js';
 import { initializeDiscordListener as initializeVulcanDiscord } from './discord-listener-vulcan.js';
@@ -69,6 +69,86 @@ export interface SourceInfo {
   lastDataHash: string;
   lastSuccessfulUpdate: string; // Track when we last got valid data
   lastMessageReceived: string; // Track when we last received any message
+}
+
+// Seed rarity mapping for notification prioritization
+const SEED_RARITY_MAP: Record<string, string> = {
+  // Common
+  "Carrot": "Common",
+  "Strawberry": "Common",
+  // Uncommon
+  "Blueberry": "Uncommon",
+  "Orange Tulip": "Uncommon",
+  "Buttercup": "Uncommon",
+  // Rare
+  "Tomato": "Rare",
+  "Corn": "Rare",
+  "Daffodil": "Rare",
+  // Legendary
+  "Watermelon": "Legendary",
+  "Pumpkin": "Legendary",
+  "Apple": "Legendary",
+  "Bamboo": "Legendary",
+  "Broccoli": "Legendary",
+  // Mythical
+  "Coconut": "Mythical",
+  "Cactus": "Mythical",
+  "Dragon Fruit": "Mythical",
+  "Mango": "Mythical",
+  "Potato": "Mythical",
+  // Divine
+  "Grape": "Divine",
+  "Mushroom": "Divine",
+  "Pepper": "Divine",
+  "Cacao": "Divine",
+  "Brussels Sprout": "Divine",
+  "Sunflower": "Divine",
+  // Prismatic
+  "Beanstalk": "Prismatic",
+  "Ember Lily": "Prismatic",
+  "Sugar Apple": "Prismatic",
+  "Burning Bud": "Prismatic",
+  "Giant Pinecone": "Prismatic",
+  "Elder Strawberry": "Prismatic",
+  "Romanesco": "Prismatic",
+  "Cocomango": "Prismatic",
+  "Crimson Thorn": "Prismatic",
+  "Great Pumpkin": "Prismatic",
+  "Trinity Fruit": "Prismatic",
+  "Zebrazinkle": "Prismatic",
+  "Octobloom": "Prismatic"
+};
+
+// Rarity priority order (lower number = higher priority)
+const RARITY_PRIORITY: Record<string, number> = {
+  "Prismatic": 0,
+  "Divine": 1,
+  "Mythical": 2,
+  "Legendary": 3,
+  "Rare": 4,
+  "Uncommon": 5,
+  "Common": 6
+};
+
+// Helper function to get rarity with case-insensitive matching
+function getSeedRarity(seedName: string): string {
+  // Try exact match first (most common case)
+  if (SEED_RARITY_MAP[seedName]) {
+    return SEED_RARITY_MAP[seedName];
+  }
+  
+  // Fallback to case-insensitive match
+  const normalizedName = seedName.trim();
+  const matchingKey = Object.keys(SEED_RARITY_MAP).find(
+    key => key.toLowerCase() === normalizedName.toLowerCase()
+  );
+  
+  if (matchingKey) {
+    return SEED_RARITY_MAP[matchingKey];
+  }
+  
+  // Default to Common if not found
+  return "Common";
 }
 
 class StockManager {
@@ -913,13 +993,24 @@ class StockManager {
       // Send notifications based on category type
       switch (category) {
         case 'seeds':
-        case 'gear':
-        case 'eggs':
-          console.log(`🔔 Processing ${category} notifications for ${items.length} items`);
-          // Per-item notifications for these categories
-          for (const item of items) {
+          // Sort seeds by rarity priority (Prismatic first, then Divine, etc.)
+          const sortedSeeds = [...items].sort((a, b) => {
+            const rarityA = getSeedRarity(a.name);
+            const rarityB = getSeedRarity(b.name);
+            const priorityA = RARITY_PRIORITY[rarityA] ?? 999;
+            const priorityB = RARITY_PRIORITY[rarityB] ?? 999;
+            return priorityA - priorityB; // Lower priority number = higher rarity = sent first
+          });
+          
+          console.log(`🔔 Processing ${category} notifications for ${sortedSeeds.length} items (sorted by rarity)`);
+          console.log(`🔔 Seed notification order: ${sortedSeeds.map(s => `${s.name} (${getSeedRarity(s.name)})`).join(', ')}`);
+          
+          // Per-item notifications for seeds (sorted by rarity)
+          // Send all seed notifications in parallel for maximum speed (rate limiter will handle throttling)
+          const seedNotificationPromises = sortedSeeds.map(async (item) => {
             const shouldNotify = this.shouldNotifyForItem();
-            console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
+            const itemRarity = getSeedRarity(item.name);
+            console.log(`🔔 Should notify for ${item.name} (${itemRarity}): ${shouldNotify}`);
             
             // DUPLICATE FILTERING DISABLED - Commented out for easy reactivation if needed
             // Only apply duplicate filtering to seeds (where daily seeds cause spam)
@@ -929,9 +1020,26 @@ class StockManager {
             //   console.log(`🔍 Duplicate filter result for ${item.name}: ${shouldFilterDuplicate}`);
             //   if (shouldFilterDuplicate) {
             //     console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
-            //     continue;
+            //     return;
             //   }
             // }
+            
+            if (shouldNotify) {
+              await sendItemNotification(item.name, item.quantity, category);
+            }
+          });
+          
+          // Wait for all seed notifications to complete (they run in parallel)
+          await Promise.all(seedNotificationPromises);
+          break;
+          
+        case 'gear':
+        case 'eggs':
+          console.log(`🔔 Processing ${category} notifications for ${items.length} items`);
+          // Per-item notifications for these categories
+          for (const item of items) {
+            const shouldNotify = this.shouldNotifyForItem();
+            console.log(`🔔 Should notify for ${item.name}: ${shouldNotify}`);
             
             if (shouldNotify) {
               await sendItemNotification(item.name, item.quantity, category);
