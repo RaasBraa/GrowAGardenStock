@@ -1006,8 +1006,9 @@ class StockManager {
           console.log(`🔔 Seed notification order: ${sortedSeeds.map(s => `${s.name} (${getSeedRarity(s.name)})`).join(', ')}`);
           
           // Per-item notifications for seeds (sorted by rarity)
-          // Send all seed notifications in parallel for maximum speed (rate limiter will handle throttling)
-          const seedNotificationPromises = sortedSeeds.map(async (item) => {
+          // Send seed notifications sequentially by rarity priority (highest rarity first)
+          // This ensures Prismatic/Divine seeds are sent before Common seeds
+          for (const item of sortedSeeds) {
             const shouldNotify = this.shouldNotifyForItem();
             const itemRarity = getSeedRarity(item.name);
             console.log(`🔔 Should notify for ${item.name} (${itemRarity}): ${shouldNotify}`);
@@ -1020,17 +1021,16 @@ class StockManager {
             //   console.log(`🔍 Duplicate filter result for ${item.name}: ${shouldFilterDuplicate}`);
             //   if (shouldFilterDuplicate) {
             //     console.log(`🚫 Skipping notification for ${item.name} due to duplicate filtering`);
-            //     return;
+            //     continue;
             //   }
             // }
             
             if (shouldNotify) {
+              // Send notification and wait for it to complete before moving to next seed
+              // This ensures higher rarity seeds are sent first
               await sendItemNotification(item.name, item.quantity, category);
             }
-          });
-          
-          // Wait for all seed notifications to complete (they run in parallel)
-          await Promise.all(seedNotificationPromises);
+          }
           break;
           
         case 'gear':
